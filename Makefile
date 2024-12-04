@@ -1,4 +1,4 @@
-NAME = library
+NAME = seq_skiplist
 
 CC ?= gcc
 RM ?= @rm
