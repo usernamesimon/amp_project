@@ -34,13 +34,6 @@ typedef struct _seq_list {
   struct drand48_data* random_state;
 } seq_list;
 
-/* Key range types for multithreaded benchmarks */
-typedef enum {
-  COMMON,     /* All threads share the same key range */
-  DISJOINT,   /* Each thread has a distinct key range */
-  PER_THREAD  /* Each thread has its own independent range */
-} key_range_type;
-
 /* Initialize an instance of a sequential skip list 
     levels -> number of levels of express lanes
     prob -> probability that an element is inserted in levels > 0
@@ -83,7 +76,6 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out);
 */
 struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill, 
   operations_mix_t operations_mix, selection_strategy strat,
-  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob,
-  int num_threads, int repetitions, key_range_type range_type);
+  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob);
 
 #endif // SEQ_SKIPLIST_H

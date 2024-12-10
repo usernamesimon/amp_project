@@ -3,10 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <omp.h>
 #include <time.h>
 
-/* Skip List Initialization */
 seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, long int random_seed) {
     seq_list* skiplist = (seq_list*)malloc(sizeof(seq_list));
     if (!skiplist) return NULL;
@@ -30,7 +28,6 @@ seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, lo
     return skiplist;
 }
 
-/* Skip List Destruction */
 void seq_skiplist_destroy(seq_list* list) {
     node* current = list->head;
     while (current) {
@@ -43,7 +40,10 @@ void seq_skiplist_destroy(seq_list* list) {
     free(list);
 }
 
-/* Find Predecessors */
+/* Find the predecessors of 'key' for each level in 'list' and writes them to 'preds'
+  If 'key' is contained in 'list', 'pred' will contain a pointer to the node with 
+  key = 'key' for each level it was present in
+  Returns true if key was found, false otherwise */
 bool find_predecessors(seq_list* list, int key, node** preds) {
     node* current = list->head;
     for (int i = list->levels - 1; i >= 0; i--) {
@@ -57,7 +57,6 @@ bool find_predecessors(seq_list* list, int key, node** preds) {
     return preds[0]->next[0] && preds[0]->next[0]->key == key;
 }
 
-/* Contains */
 node* seq_skiplist_contains(seq_list* list, int key) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!preds) return NULL;
@@ -70,7 +69,6 @@ node* seq_skiplist_contains(seq_list* list, int key) {
     return result;
 }
 
-/* Add */
 bool seq_skiplist_add(seq_list* list, int key, void* data) {
     if (key < list->keyrange.min || key > list->keyrange.max) return false;
 
@@ -94,6 +92,7 @@ bool seq_skiplist_add(seq_list* list, int key, void* data) {
         free(preds);
         return false;
     }
+    memset(new_node->next, 0, sizeof(node*) * list->levels);
     new_node->key = key;
     new_node->data = data;
 
@@ -115,7 +114,6 @@ bool seq_skiplist_add(seq_list* list, int key, void* data) {
     return true;
 }
 
-/* Remove */
 bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!find_predecessors(list, key, preds)) {
@@ -141,7 +139,7 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
 struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill,
     operations_mix_t operations_mix, selection_strategy strat,
     unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob,
-    int num_threads, int repetitions, key_range_type range_type) {
+    int num_threads, int repetitions, key_range_overlap range_type) {
     
     struct bench_result* result = malloc(sizeof(struct bench_result));
     memset(&result->counters, 0, sizeof(result->counters));
@@ -282,7 +280,7 @@ int main(int argc, char const* argv[]) {
     double prob = atof(argv[9]);
     int num_threads = atoi(argv[10]);
     int repetitions = atoi(argv[11]);
-    key_range_type range_type;
+    key_range_overlap range_type;
 
     if (strcmp(argv[12], "common") == 0) {
         range_type = COMMON;

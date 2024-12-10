@@ -24,4 +24,12 @@ typedef struct _keyrange{
     int max;
 } keyrange_t;
 
+
+/* Key range types for multithreaded benchmarks */
+typedef enum {
+  COMMON,     /* All threads share the same key range */
+  DISJOINT,   /* Each thread has a distinct key range */
+  PER_THREAD  /* Each thread has its own independent range */
+} key_range_overlap;
+
 typedef enum _sel_strat{RANDOM, UNIQUE, SUCCESIVE} selection_strategy;

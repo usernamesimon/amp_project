@@ -3,10 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <omp.h>
 #include <time.h>
 
-/* Skip List Initialization */
 seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, long int random_seed) {
     seq_list* skiplist = (seq_list*)malloc(sizeof(seq_list));
     if (!skiplist) return NULL;
@@ -30,7 +28,6 @@ seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, lo
     return skiplist;
 }
 
-/* Skip List Destruction */
 void seq_skiplist_destroy(seq_list* list) {
     node* current = list->head;
     while (current) {
@@ -43,7 +40,10 @@ void seq_skiplist_destroy(seq_list* list) {
     free(list);
 }
 
-/* Find Predecessors */
+/* Find the predecessors of 'key' for each level in 'list' and writes them to 'preds'
+  If 'key' is contained in 'list', 'pred' will contain a pointer to the node with 
+  key = 'key' for each level it was present in
+  Returns true if key was found, false otherwise */
 bool find_predecessors(seq_list* list, int key, node** preds) {
     node* current = list->head;
     for (int i = list->levels - 1; i >= 0; i--) {
@@ -57,7 +57,6 @@ bool find_predecessors(seq_list* list, int key, node** preds) {
     return preds[0]->next[0] && preds[0]->next[0]->key == key;
 }
 
-/* Contains */
 node* seq_skiplist_contains(seq_list* list, int key) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!preds) return NULL;
@@ -70,9 +69,8 @@ node* seq_skiplist_contains(seq_list* list, int key) {
     return result;
 }
 
-/* Add */
 bool seq_skiplist_add(seq_list* list, int key, void* data) {
-    if (key <= list->keyrange.min || key > list->keyrange.max) return false;
+    if (key < list->keyrange.min || key > list->keyrange.max) return false;
 
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!preds) return false;
@@ -94,6 +92,7 @@ bool seq_skiplist_add(seq_list* list, int key, void* data) {
         free(preds);
         return false;
     }
+    memset(new_node->next, 0, sizeof(node*) * list->levels);
     new_node->key = key;
     new_node->data = data;
 
@@ -115,7 +114,6 @@ bool seq_skiplist_add(seq_list* list, int key, void* data) {
     return true;
 }
 
-/* Remove */
 bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!find_predecessors(list, key, preds)) {
@@ -137,112 +135,203 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
     return true;
 }
 
-/* Benchmark Function */
-struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill,
+bool check_bit(int* vector, int position) {
+    int word = position / (sizeof(int)*8);
+    int bit = position % (sizeof(int)*8);
+    int mask = 1 << bit;
+    return (vector[word] & mask) > 0;
+}
+void set_bit(int* vector, int position) {
+    int word = position / (sizeof(int)*8);
+    int bit = position % (sizeof(int)*8);
+    int mask = 1 << bit;
+    vector[word] = vector[word] | mask;
+}
+
+struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill,
     operations_mix_t operations_mix, selection_strategy strat,
-    unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob,
-    int num_threads, int repetitions, key_range_type range_type) {
-    
-    struct bench_result* result = malloc(sizeof(struct bench_result));
+    unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob)
+{
+    int range = keyrange.max - keyrange.min;
+    struct bench_result *result = malloc(sizeof(struct bench_result));
     memset(&result->counters, 0, sizeof(result->counters));
     result->time = 0.0;
 
-    /* Thread-local counters */
-    struct counters* thread_counters = calloc(num_threads, sizeof(struct counters));
+    seq_list *skiplist = seq_skiplist_init(levels, prob, keyrange, r_seed);
+    if (!skiplist)
+        return NULL;
+    
+    /* To keep track of the keys we used so far we use a huge bit vector.
+        If a key k was already used, the (k - key_range.min)'th bit in used_keys will be set
+    */
+    size_t used_keys_size = range/(sizeof(int)*8) + 1;
+    int* used_keys = (int*)malloc(sizeof(int)*used_keys_size);
+    if (!used_keys) return 0;
+    memset(used_keys, 0, used_keys_size);
+    int n_used_key = 0;
 
-    /* Perform repetitions */
-    for (int rep = 0; rep < repetitions; rep++) {
-        seq_list* skiplist = seq_skiplist_init(levels, prob, keyrange, r_seed + rep);
-        if (!skiplist) return NULL;
+    /* initialize random state for key selection */
+    struct drand48_data *random_state = (struct drand48_data *)malloc(6);
+    srand48_r(r_seed + 1, random_state);
 
-        /* Prefill skip list */
-        for (int i = 0; i < n_prefill; i++) {
-            seq_skiplist_add(skiplist, keyrange.min + i, NULL);
-        }
-
-        clock_t start_time = clock();
-        #pragma omp parallel num_threads(num_threads)
+    /* prefill the skiplist */
+    double die;
+    int key = n_prefill + 1;
+    
+    /* Warning: this will not terminate if n_prefill > keyrange */
+    if (strat == RANDOM || strat == UNIQUE)
+    {
+        uint16_t prefill_remaining = n_prefill;
+        while (prefill_remaining > 0)
         {
-            int thread_id = omp_get_thread_num();
-            unsigned int thread_seed = r_seed + thread_id;
-            struct drand48_data random_state;
-            srand48_r(thread_seed, &random_state);
+            drand48_r(random_state, &die);
+            key = (int)(die * range);
+            if (check_bit(used_keys, key)) continue; // key already contained
 
-            int local_range_min, local_range_max;
-
-            /* Determine key range based on range type */
-            if (range_type == COMMON) {
-                local_range_min = keyrange.min;
-                local_range_max = keyrange.max;
-            } else if (range_type == DISJOINT) {
-                int range_per_thread = (keyrange.max - keyrange.min + 1) / num_threads;
-                local_range_min = keyrange.min + thread_id * range_per_thread;
-                local_range_max = local_range_min + range_per_thread - 1;
-            } else if (range_type == PER_THREAD) {
-                local_range_min = thread_id * 1000;
-                local_range_max = local_range_min + 999;
-            }
-
-            while ((clock() - start_time) / CLOCKS_PER_SEC < time_interval) {
-                int key;
-                if (strat == RANDOM) {
-                    double op;
-                    drand48_r(&random_state, &op);
-                    key = local_range_min + (int)(op * (local_range_max - local_range_min + 1));
-                } else if (strat == UNIQUE) {
-                    static int counter = 0;
-                    key = local_range_min + (counter++ % (local_range_max - local_range_min + 1));
-                } else if (strat == SUCCESIVE) {
-                    key = local_range_min++;
-                    if (key > local_range_max) key = local_range_min;
-                }
-
-                double op;
-                drand48_r(&random_state, &op);
-
-                if (op < operations_mix.insert_p) {
-                    if (seq_skiplist_add(skiplist, key, NULL)) {
-                        thread_counters[thread_id].successful_adds++;
-                    } else {
-                        thread_counters[thread_id].failed_adds++;
-                    }
-                } else if (op < operations_mix.insert_p + operations_mix.contain_p) {
-                    if (seq_skiplist_contains(skiplist, key)) {
-                        thread_counters[thread_id].succesfull_contains++;
-                    } else {
-                        thread_counters[thread_id].failed_contains++;
-                    }
-                } else {
-                    if (seq_skiplist_remove(skiplist, key, NULL)) {
-                        thread_counters[thread_id].succesfull_removes++;
-                    } else {
-                        thread_counters[thread_id].failed_removes++;
-                    }
-                }
-            }
+            set_bit(used_keys, key);
+            n_used_key++;
+            prefill_remaining--;
+            seq_skiplist_add(skiplist, key + keyrange.min, NULL);            
         }
-        result->time += (double)(clock() - start_time) / CLOCKS_PER_SEC;
-        seq_skiplist_destroy(skiplist);
+    }
+    else
+    {
+        for (int i = 0; i < n_prefill; i++)
+        {
+            seq_skiplist_add(skiplist, keyrange.min + i + 1, NULL);
+        }
     }
 
-    /* Aggregate thread-local counters into global counters */
-    for (int i = 0; i < num_threads; i++) {
-        result->counters.successful_adds += thread_counters[i].successful_adds;
-        result->counters.failed_adds += thread_counters[i].failed_adds;
-        result->counters.succesfull_contains += thread_counters[i].succesfull_contains;
-        result->counters.failed_contains += thread_counters[i].failed_contains;
-        result->counters.succesfull_removes += thread_counters[i].succesfull_removes;
-        result->counters.failed_removes += thread_counters[i].failed_removes;
+    clock_t endtime = clock() + time_interval * CLOCKS_PER_SEC;
+    clock_t interval;
+    bool res;
+    while (clock() < endtime)
+    {
+        /* determine next key */
+        if (strat == RANDOM)
+        {
+            drand48_r(random_state, &die);
+            key = (int)(die * range + keyrange.min);
+        }
+        else if (strat == UNIQUE)
+        {
+            /* Need to start anew if we used all possible keys */
+            if (n_used_key >= range) {
+                memset(used_keys, 0, used_keys_size);
+            }
+
+            do
+            {
+                drand48_r(random_state, &die);
+                key = (int)(die * range);
+            } while (check_bit(used_keys, key));
+            set_bit(used_keys, key);
+            n_used_key++;
+            key = key + keyrange.min;
+            
+        }
+        else if (strat == SUCCESIVE)
+        {
+            key++;
+            if (key > keyrange.max)
+                key = keyrange.min;
+        }
+
+        /* determine next operation */
+        drand48_r(random_state, &die);
+        if (die < operations_mix.insert_p)
+        {
+            interval = clock();
+            res = seq_skiplist_add(skiplist, key, NULL);
+            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->counters.successful_adds += res;
+            result->counters.failed_adds += !res;
+        }
+        else if (die < operations_mix.insert_p + operations_mix.contain_p)
+        {
+            interval = clock();
+            res = seq_skiplist_contains(skiplist, key) != NULL;
+            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->counters.succesfull_contains += res;
+            result->counters.failed_contains += !res;
+        }
+        else
+        {
+            interval = clock();
+            res = seq_skiplist_remove(skiplist, key, NULL);
+            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->counters.succesfull_removes += res;
+            result->counters.failed_removes += !res;
+        }
     }
 
-    result->time /= repetitions; /* Average time per repetition */
-    free(thread_counters);
+    free(used_keys);
+    seq_skiplist_destroy(skiplist);
     return result;
 }
+
+#ifdef DEBUG
+#include <stdio.h>
+#include <string.h>
+#define LINELEN (1024)
+#define TOKENLEN 3
+/* BE MINDFUL OF LINELEN AND TOKENLEN LIMITS! */
+void print_list(seq_list* list) {
+  char print[list->levels][LINELEN];
+  
+  char temp[TOKENLEN+2];
+  char empty[TOKENLEN+2];
+  sprintf(empty, " ");
+  for (int i = 0; i < TOKENLEN; i++)
+  {
+    strcat(empty, "-");
+  }
+  
+  /* print head sentinel node */
+  node** current = (node**)malloc(sizeof(node*)*list->levels);
+  for (size_t i = 0; i < list->levels; i++)
+  {
+    current[i] = list->head;
+    snprintf(print[i], TOKENLEN+1, "%*d", TOKENLEN, list->head->key);
+  }
+  /* print the levels simultaneously:
+    Walk the current[0] pointer trough level 0 and compare the 
+    higher level current pointers against its next key. If they match
+    print and advance the higher level
+  */
+  while (current[0]->next && current[0]->next[0])
+  {
+    /* set the temp buffer and print level 0 */
+    int next_key = current[0]->next[0]->key;
+    snprintf(temp, TOKENLEN+2, " %*d", TOKENLEN, next_key);
+    strcat(print[0], temp);
+    /* compare higher leveled pointers */
+    for (size_t i = 1; i < list->levels; i++)
+    {
+      if (current[i]->next[i] && current[i]->next[i]->key == next_key)
+      {
+        snprintf(temp, TOKENLEN+2, " %*d", TOKENLEN, next_key);
+        current[i] = current[i]->next[i];
+      } else
+      {
+        snprintf(temp, TOKENLEN+2, "%s", empty);
+      }
+      strcat(print[i], temp);     
+    }
+    current[0] = current[0]->next[0];    
+  }
+  for (int i = list->levels-1; i >= 0; i--)
+  {
+    printf("Level %d: %s\n", i, print[i]);
+  }
+  printf("\n");
+}
+#endif
+
 /* Main Function */
 int main(int argc, char const* argv[]) {
-    if (argc < 13) {
-        fprintf(stderr, "Usage: %s <time_interval> <n_prefill> <insert_p> <delete_p> <contain_p> <key_min> <key_max> <levels> <prob> <num_threads> <repetitions> <range_type>\n", argv[0]);
+    if (argc < 11) {
+        fprintf(stderr, "Usage: %s <time_interval> <n_prefill> <insert_p> <delete_p> <contain_p> <key_min> <key_max> <levels> <prob> <strategy>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -252,23 +341,15 @@ int main(int argc, char const* argv[]) {
     keyrange_t keyrange = {atoi(argv[6]), atoi(argv[7])};
     uint8_t levels = atoi(argv[8]);
     double prob = atof(argv[9]);
-    int num_threads = atoi(argv[10]);
-    int repetitions = atoi(argv[11]);
-    key_range_type range_type;
+    selection_strategy strat;
 
-    if (strcmp(argv[12], "common") == 0) {
-        range_type = COMMON;
-    } else if (strcmp(argv[12], "disjoint") == 0) {
-        range_type = DISJOINT;
-    } else if (strcmp(argv[12], "per_thread") == 0) {
-        range_type = PER_THREAD;
-    } else {
-        fprintf(stderr, "Error: Invalid range_type. Use 'common', 'disjoint', or 'per_thread'.\n");
-        return EXIT_FAILURE;
-    }
+    if (strcmp(argv[10],"random") == 0) strat = RANDOM;
+    else if (strcmp(argv[10],"unique") == 0) strat = UNIQUE;
+    else strat = SUCCESIVE;
+    
 
     struct bench_result* result = seq_skiplist_benchmark(time_interval, n_prefill, operations_mix,
-        RANDOM, 12345, keyrange, levels, prob, num_threads, repetitions, range_type);
+        strat, 12345, keyrange, levels, prob);
 
     if (!result) {
         fprintf(stderr, "Error: Benchmark failed.\n");
@@ -287,11 +368,9 @@ int main(int argc, char const* argv[]) {
         result->counters.succesfull_removes, result->counters.succesfull_removes + result->counters.failed_removes);
     printf("Contains: %d successful / %d attempted\n",
         result->counters.succesfull_contains, result->counters.succesfull_contains + result->counters.failed_contains);
-    printf("Throughput: %.2f ops/sec\n", total_ops / result->time);
+    printf("Throughput: %.3e ops/sec\n", total_ops / result->time);
 
     free(result);
     return 0;
 }
 
-//TBD Corretness -> For correctness, you should make it possible to verify that all items successfully inserted can be deleted once, no more and no less.
-//TBD Counter for number of operations per thread

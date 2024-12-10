@@ -1,0 +1,32 @@
+{
+  "tasks": [
+    {
+      "type": "cppbuild",
+      "label": "Build seq_skiplist",
+      "command": "/usr/bin/gcc",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${workspaceFolder}/src/seq_skiplist.c",
+        "-o",
+        "${workspaceFolder}/build/seq_skiplist",
+        "-I",
+        "${workspaceFolder}/inc",
+        "-Wall",
+        "-Wextra"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/build"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Build Sequential Skiplist"
+    }
+  ],
+  "version": "2.0.0"
+}
