@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
+#include <assert.h>
 
 seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, long int random_seed) {
     seq_list* skiplist = (seq_list*)malloc(sizeof(seq_list));
@@ -135,17 +136,58 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
     return true;
 }
 
-bool check_bit(int* vector, int position) {
-    int word = position / (sizeof(int)*8);
-    int bit = position % (sizeof(int)*8);
-    int mask = 1 << bit;
-    return (vector[word] & mask) > 0;
+unique_keyarray_t* unique_keys_init(int max) {
+    unique_keyarray_t* keys = (unique_keyarray_t*)malloc(sizeof(unique_keyarray_t));
+    if(!keys) return NULL;
+    keys->size = max;
+    keys->array = (int*)malloc(keys->size*sizeof(int));
+    if(!keys->array) {
+        free(keys);
+        return NULL;
+    }
+    keys->current = keys->array;
+    keys->shuffled = keys->array;
+    for (int i = 0; i < max; i++)
+    {
+        keys->array[i] = i;
+    }
+    return keys;
 }
-void set_bit(int* vector, int position) {
-    int word = position / (sizeof(int)*8);
-    int bit = position % (sizeof(int)*8);
-    int mask = 1 << bit;
-    vector[word] = vector[word] | mask;
+
+int unique_keys_next(unique_keyarray_t* keys, struct drand48_data* random_state) {
+    int* array = keys->array;
+    int* current = keys->current;
+    int* shuffled = keys->shuffled;
+
+    /* Current position is already randomized */
+    if (current < shuffled)
+    {
+        return *current++;
+    /* Need to randomize the current position */
+    } else if (current < (array + keys->size))
+    {
+        assert(current == shuffled);
+        int range = keys->size - (shuffled - array);
+        double die;
+        drand48_r(random_state, &die);
+        int swapi = (int)(die * range);
+        int* swap = shuffled + swapi;
+        int tmp = *current;
+        *current = *swap;
+        *swap = tmp;
+        shuffled++;
+        return *current++;
+    /* We are passed the end of the array, wrap around */     
+    } else {
+        current = array;
+        return *current++;
+    }    
+}
+
+void unique_keys_destroy(unique_keyarray_t* keys) {
+    if(!keys) return;
+    if(keys->array) free(keys->array);
+    free(keys);
 }
 
 struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill,
@@ -161,15 +203,6 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     if (!skiplist)
         return NULL;
     
-    /* To keep track of the keys we used so far we use a huge bit vector.
-        If a key k was already used, the (k - key_range.min)'th bit in used_keys will be set
-    */
-    size_t used_keys_size = range/(sizeof(int)*8) + 1;
-    int* used_keys = (int*)malloc(sizeof(int)*used_keys_size);
-    if (!used_keys) return 0;
-    memset(used_keys, 0, used_keys_size);
-    int n_used_key = 0;
-
     /* initialize random state for key selection */
     struct drand48_data *random_state = (struct drand48_data *)malloc(6);
     srand48_r(r_seed + 1, random_state);
@@ -177,22 +210,32 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     /* prefill the skiplist */
     double die;
     int key = n_prefill + 1;
-    
-    /* Warning: this will not terminate if n_prefill > keyrange */
-    if (strat == RANDOM || strat == UNIQUE)
-    {
-        uint16_t prefill_remaining = n_prefill;
-        while (prefill_remaining > 0)
-        {
-            drand48_r(random_state, &die);
-            key = (int)(die * range);
-            if (check_bit(used_keys, key)) continue; // key already contained
 
-            set_bit(used_keys, key);
-            n_used_key++;
-            prefill_remaining--;
-            seq_skiplist_add(skiplist, key + keyrange.min, NULL);            
+    unique_keyarray_t* unique_keys;
+    
+    /* Prefill list */
+    if (strat == UNIQUE)
+    {
+        unique_keys = unique_keys_init(range);
+        if (unique_keys == NULL)
+            return NULL;
+        for (size_t i = 0; i < n_prefill; i++)
+        {
+            seq_skiplist_add(skiplist, 
+                keyrange.min + unique_keys_next(unique_keys, random_state), NULL);
         }
+        
+    }
+    else if (strat == RANDOM) {
+        unique_keys = unique_keys_init(range);
+        if (unique_keys == NULL)
+            return NULL;
+        for (size_t i = 0; i < n_prefill; i++)
+        {
+            seq_skiplist_add(skiplist, 
+                keyrange.min + unique_keys_next(unique_keys, random_state), NULL);
+        }
+        unique_keys_destroy(unique_keys);
     }
     else
     {
@@ -215,19 +258,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         }
         else if (strat == UNIQUE)
         {
-            /* Need to start anew if we used all possible keys */
-            if (n_used_key >= range) {
-                memset(used_keys, 0, used_keys_size);
-            }
-
-            do
-            {
-                drand48_r(random_state, &die);
-                key = (int)(die * range);
-            } while (check_bit(used_keys, key));
-            set_bit(used_keys, key);
-            n_used_key++;
-            key = key + keyrange.min;
+            key = unique_keys_next(unique_keys, random_state);
             
         }
         else if (strat == SUCCESIVE)
@@ -265,7 +296,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         }
     }
 
-    free(used_keys);
+    if (strat == UNIQUE) unique_keys_destroy(unique_keys);
     seq_skiplist_destroy(skiplist);
     return result;
 }

@@ -33,3 +33,13 @@ typedef enum {
 } key_range_overlap;
 
 typedef enum _sel_strat{RANDOM, UNIQUE, SUCCESIVE} selection_strategy;
+
+/* Structure to loop through a random permutation of keys when doing benchmarks. 
+    Initialize the array with array[i] = i. Then swap current with a random
+    index of the not yet shuffled ones and increment current and shuffled */
+typedef struct _unique_keyarray{
+    int* array;     /* Physical start of array */
+    int* current;   /* Iterator for next key, wraps around if all keys used */
+    int* shuffled;  /* Keeps track up to which point the array has been shuffled */
+    int size;       /* size in number of ints */
+} unique_keyarray_t;
