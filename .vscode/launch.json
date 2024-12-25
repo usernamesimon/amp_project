@@ -1,7 +1,4 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
@@ -10,9 +7,17 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/seq_skiplist",
       "preLaunchTask": "Build seq_skiplist",
-//"Usage: <time_interval> <n_prefill> <insert_p> <delete_p> <contain_p> <key_min> <key_max> <levels> <prob> <strategy>
       "args": [
-        "2", "10", "0.1", "0.1", "0.8", "0", "25", "4", "0.5", "unique"
+        "2",
+        "10",
+        "0.1",
+        "0.1",
+        "0.8",
+        "0",
+        "25",
+        "4",
+        "0.5",
+        "unique"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build",
@@ -20,18 +25,79 @@
       "externalConsole": false,
       "MIMode": "gdb",
       "setupCommands": [
-          {
-              "description": "Enable pretty-printing for gdb",
-              "text": "-enable-pretty-printing",
-              "ignoreFailures": true
-          },
-          {
-              "description": "Set Disassembly Flavor to Intel",
-              "text": "-gdb-set disassembly-flavor intel",
-              "ignoreFailures": true
-          }
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
       ]
+    },
+    {
+      "name": "Launch coarse_skiplist",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/coarse_skiplist",
+      "preLaunchTask": "Build coarse_skiplist",
+      "args": [
+        "2",
+        "10",
+        "0.1",
+        "0.1",
+        "0.8",
+        "0",
+        "25",
+        "4",
+        "0.5",
+        "unique"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "C/C++: gcc build and debug active file",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "C/C++: gcc build active file",
+      "miDebuggerPath": "/usr/bin/gdb"
     }
-
   ]
 }

@@ -1,12 +1,13 @@
-#include "../inc/seq_skiplist.h"
+#include "../inc/coarse_skiplist.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
+#include <omp.h>
 
-seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, long int random_seed) {
-    seq_list* skiplist = (seq_list*)malloc(sizeof(seq_list));
+coarse_list* coarse_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, long int random_seed) {
+    coarse_list* skiplist = (coarse_list*)malloc(sizeof(coarse_list));
     if (!skiplist) return NULL;
     skiplist->levels = levels;
     skiplist->prob = prob;
@@ -28,7 +29,7 @@ seq_list* seq_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, lo
     return skiplist;
 }
 
-void seq_skiplist_destroy(seq_list* list) {
+void coarse_skiplist_destroy(coarse_list* list) {
     node* current = list->head;
     while (current) {
         node* next = current->next[0];
@@ -44,7 +45,7 @@ void seq_skiplist_destroy(seq_list* list) {
   If 'key' is contained in 'list', 'pred' will contain a pointer to the node with 
   key = 'key' for each level it was present in
   Returns true if key was found, false otherwise */
-bool find_predecessors(seq_list* list, int key, node** preds) {
+bool find_predecessors(coarse_list* list, int key, node** preds) {
     node* current = list->head;
     for (int i = list->levels - 1; i >= 0; i--) {
         node* next = current->next[i];
@@ -57,7 +58,7 @@ bool find_predecessors(seq_list* list, int key, node** preds) {
     return preds[0]->next[0] && preds[0]->next[0]->key == key;
 }
 
-node* seq_skiplist_contains(seq_list* list, int key) {
+node* coarse_skiplist_contains(coarse_list* list, int key) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!preds) return NULL;
 
@@ -69,7 +70,7 @@ node* seq_skiplist_contains(seq_list* list, int key) {
     return result;
 }
 
-bool seq_skiplist_add(seq_list* list, int key, void* data) {
+bool coarse_skiplist_add(coarse_list* list, int key, void* data) {
     if (key < list->keyrange.min || key > list->keyrange.max) return false;
 
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
@@ -114,7 +115,7 @@ bool seq_skiplist_add(seq_list* list, int key, void* data) {
     return true;
 }
 
-bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
+bool coarse_skiplist_remove(coarse_list* list, int key, void** data_out) {
     node** preds = (node**)malloc(sizeof(node*) * list->levels);
     if (!find_predecessors(list, key, preds)) {
         free(preds);
@@ -136,10 +137,9 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
 }
 
 /* Benchmark Function */
-struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill,
-    operations_mix_t operations_mix, selection_strategy strat,
-    unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob,
-    int num_threads, int repetitions, key_range_overlap range_type) {
+struct bench_result* coarse_skiplist_benchmark(uint16_t num_threads, uint16_t time_interval, uint16_t n_prefill, 
+  operations_mix_t operations_mix, selection_strategy strat, key_overlap overlap,
+  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob) {
     
     struct bench_result* result = malloc(sizeof(struct bench_result));
     memset(&result->counters, 0, sizeof(result->counters));
@@ -148,95 +148,77 @@ struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     /* Thread-local counters */
     struct counters* thread_counters = calloc(num_threads, sizeof(struct counters));
 
-    /* Perform repetitions */
-    for (int rep = 0; rep < repetitions; rep++) {
-        seq_list* skiplist = seq_skiplist_init(levels, prob, keyrange, r_seed + rep);
-        if (!skiplist) return NULL;
+    coarse_list* skiplist = coarse_skiplist_init(levels, prob, keyrange, r_seed);
+    if (!skiplist) return NULL;
 
-        /* Prefill skip list */
-        for (int i = 0; i < n_prefill; i++) {
-            seq_skiplist_add(skiplist, keyrange.min + i, NULL);
-        }
-    /* Correctness Verification */
+    /* Prefill skip list */
     for (int i = 0; i < n_prefill; i++) {
-        int key = keyrange.min + i;
-        if (!seq_skiplist_contains(skiplist, key)) {
-            fprintf(stderr, "Correctness failed: Key %d not found in skip list.\n", key);
-            exit(EXIT_FAILURE);
-        }
-        void* data;
-        if (!seq_skiplist_remove(skiplist, key, &data)) {
-            fprintf(stderr, "Correctness failed: Key %d could not be removed from skip list.\n", key);
-            exit(EXIT_FAILURE);
-        }
+        coarse_skiplist_add(skiplist, keyrange.min + i, NULL);
     }
-    printf("Correctness verification passed: All prefilled items inserted and removed successfully.\n");
 
+    clock_t start_time = clock();
+    #pragma omp parallel num_threads(num_threads)
+    {
+        int thread_id = omp_get_thread_num();
+        unsigned int thread_seed = r_seed + thread_id;
+        struct drand48_data *random_state = (struct drand48_data *)malloc(6);
+        srand48_r(thread_seed, random_state);
 
-        clock_t start_time = clock();
-        #pragma omp parallel num_threads(num_threads)
-        {
-            int thread_id = omp_get_thread_num();
-            unsigned int thread_seed = r_seed + thread_id;
-            struct drand48_data random_state;
-            srand48_r(thread_seed, &random_state);
+        int local_range_min, local_range_max;
 
-            int local_range_min, local_range_max;
+        /* Determine key range based on range type */
+        if (overlap == COMMON) {
+            local_range_min = keyrange.min;
+            local_range_max = keyrange.max;
+        } else if (overlap == DISJOINT) {
+            int range_per_thread = (keyrange.max - keyrange.min + 1) / num_threads;
+            local_range_min = keyrange.min + thread_id * range_per_thread;
+            local_range_max = local_range_min + range_per_thread - 1;
+        } else if (overlap == PER_THREAD) {
+            local_range_min = thread_id * 1000;
+            local_range_max = local_range_min + 999;
+        }
 
-            /* Determine key range based on range type */
-            if (range_type == COMMON) {
-                local_range_min = keyrange.min;
-                local_range_max = keyrange.max;
-            } else if (range_type == DISJOINT) {
-                int range_per_thread = (keyrange.max - keyrange.min + 1) / num_threads;
-                local_range_min = keyrange.min + thread_id * range_per_thread;
-                local_range_max = local_range_min + range_per_thread - 1;
-            } else if (range_type == PER_THREAD) {
-                local_range_min = thread_id * 1000;
-                local_range_max = local_range_min + 999;
-            }
-
-            while ((clock() - start_time) / CLOCKS_PER_SEC < time_interval) {
-                int key;
-                if (strat == RANDOM) {
-                    double op;
-                    drand48_r(&random_state, &op);
-                    key = local_range_min + (int)(op * (local_range_max - local_range_min + 1));
-                } else if (strat == UNIQUE) {
-                    static int counter = 0;
-                    key = local_range_min + (counter++ % (local_range_max - local_range_min + 1));
-                } else if (strat == SUCCESIVE) {
-                    key = local_range_min++;
-                    if (key > local_range_max) key = local_range_min;
-                }
-
+        while ((clock() - start_time) / CLOCKS_PER_SEC < time_interval) {
+            int key;
+            if (strat == RANDOM) {
                 double op;
-                drand48_r(&random_state, &op);
+                drand48_r(random_state, &op);
+                key = local_range_min + (int)(op * (local_range_max - local_range_min + 1));
+            } else if (strat == UNIQUE) {
+                static int counter = 0;
+                key = local_range_min + (counter++ % (local_range_max - local_range_min + 1));
+            } else if (strat == SUCCESIVE) {
+                key = local_range_min++;
+                if (key > local_range_max) key = local_range_min;
+            }
 
-                if (op < operations_mix.insert_p) {
-                    if (seq_skiplist_add(skiplist, key, NULL)) {
-                        thread_counters[thread_id].successful_adds++;
-                    } else {
-                        thread_counters[thread_id].failed_adds++;
-                    }
-                } else if (op < operations_mix.insert_p + operations_mix.contain_p) {
-                    if (seq_skiplist_contains(skiplist, key)) {
-                        thread_counters[thread_id].succesfull_contains++;
-                    } else {
-                        thread_counters[thread_id].failed_contains++;
-                    }
+            double op;
+            drand48_r(random_state, &op);
+
+            if (op < operations_mix.insert_p) {
+                if (coarse_skiplist_add(skiplist, key, NULL)) {
+                    thread_counters[thread_id].successful_adds++;
                 } else {
-                    if (seq_skiplist_remove(skiplist, key, NULL)) {
-                        thread_counters[thread_id].succesfull_removes++;
-                    } else {
-                        thread_counters[thread_id].failed_removes++;
-                    }
+                    thread_counters[thread_id].failed_adds++;
+                }
+            } else if (op < operations_mix.insert_p + operations_mix.contain_p) {
+                if (coarse_skiplist_contains(skiplist, key)) {
+                    thread_counters[thread_id].succesfull_contains++;
+                } else {
+                    thread_counters[thread_id].failed_contains++;
+                }
+            } else {
+                if (coarse_skiplist_remove(skiplist, key, NULL)) {
+                    thread_counters[thread_id].succesfull_removes++;
+                } else {
+                    thread_counters[thread_id].failed_removes++;
                 }
             }
         }
-        result->time += (double)(clock() - start_time) / CLOCKS_PER_SEC;
-        seq_skiplist_destroy(skiplist);
     }
+    result->time += (double)(clock() - start_time) / CLOCKS_PER_SEC;
+    coarse_skiplist_destroy(skiplist);
 
     
     /* Report Operations Per Thread */
@@ -261,7 +243,6 @@ struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         result->counters.failed_removes += thread_counters[i].failed_removes;
     }
 
-    result->time /= repetitions; /* Average time per repetition */
     free(thread_counters);
     return result;
 }
@@ -280,7 +261,7 @@ int main(int argc, char const* argv[]) {
     double prob = atof(argv[9]);
     int num_threads = atoi(argv[10]);
     int repetitions = atoi(argv[11]);
-    key_range_overlap range_type;
+    key_overlap range_type;
 
     if (strcmp(argv[12], "common") == 0) {
         range_type = COMMON;
@@ -293,8 +274,8 @@ int main(int argc, char const* argv[]) {
         return EXIT_FAILURE;
     }
 
-    struct bench_result* result = seq_skiplist_benchmark(time_interval, n_prefill, operations_mix,
-        RANDOM, 12345, keyrange, levels, prob, num_threads, repetitions, range_type);
+    struct bench_result* result = coarse_skiplist_benchmark(num_threads, time_interval, n_prefill, operations_mix,
+        RANDOM, range_type, 12345, keyrange, levels, prob);
 
     if (!result) {
         fprintf(stderr, "Error: Benchmark failed.\n");

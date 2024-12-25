@@ -1,4 +1,4 @@
-NAME = seq_skiplist
+NAME = seq_skiplist coarse_skiplist
 
 CC ?= gcc
 RM ?= @rm
@@ -11,11 +11,7 @@ BUILD_DIR = build
 DATA_DIR = data
 INCLUDES = inc
 
-OBJECTS = $(NAME).o
-
-
-all: $(BUILD_DIR) $(NAME) $(NAME).so
-	@echo "Built $(NAME)"
+all: seq_skiplist
 
 $(DATA_DIR):
 	@echo "Creating data directory: $(DATA_DIR)"
@@ -25,17 +21,29 @@ $(BUILD_DIR):
 	@echo "Creating build directory: $(BUILD_DIR)"
 	$(MKDIR) $(BUILD_DIR)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
 	@echo "Compiling $<"
-	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c -o $@ $<
+	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
-$(NAME): $(foreach object,$(OBJECTS),$(BUILD_DIR)/$(object))
-	@echo "Linking $(NAME)"
-	$(CC) $(CFLAGS) -o $@ $^
+seq_skiplist: seq_skiplist.o
+	@echo "Linking $@"
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
-$(NAME).so: $(foreach object,$(OBJECTS),$(BUILD_DIR)/$(object))
-	@echo "Linking $(NAME)"
-	$(CC) $(CFLAGS) -fPIC -shared -o $@ $^ 
+seq_skiplist.so: seq_skiplist.o
+	@echo "Linking $@"
+	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
+
+coarse_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
+	@echo "Compiling $<"
+	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+coarse_skiplist: coarse_skiplist.o
+	@echo "Linking $@"
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
+
+coarse_skiplist.so: coarse_skiplist.o
+	@echo "Linking $@"
+	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
 
 bench:
 	@echo "This could run a sophisticated benchmark"
@@ -64,4 +72,4 @@ clean:
 	$(RM) -Rf $(BUILD_DIR)
 	$(RM) -f $(NAME) $(NAME).so
 
-.PHONY: clean report
+.PHONY: all clean report
