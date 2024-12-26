@@ -23,15 +23,15 @@ $(BUILD_DIR):
 
 seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
 	@echo "Compiling $<"
-	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+	$(CC) -O3 -Wall -Wextra -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 seq_skiplist: seq_skiplist.o
 	@echo "Linking $@"
-	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
+	$(CC) -O3 -Wall -Wextra -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
 seq_skiplist.so: seq_skiplist.o
 	@echo "Linking $@"
-	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
+	$(CC) -O3 -Wall -Wextra -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
 
 coarse_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
 	@echo "Compiling $<"
