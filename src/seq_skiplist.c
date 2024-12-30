@@ -194,6 +194,18 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     operations_mix_t operations_mix, selection_strategy strat,
     unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob)
 {
+    printf("Executing benchmark of sequential skiplist\n");
+    #ifdef DEBUG
+    printf("Parameters\n");
+    printf("> Time interval for measurment: %u\n", time_interval);
+    printf("> Number of prefilled items: %u\n", n_prefill);
+    printf("> Operations mix:\n>\t>Insertions: %f\n>\t>Contains: %f\n", operations_mix.insert_p, operations_mix.contain_p);
+    printf("> Selection strategy: %d\n", strat);
+    printf("> Random seed: %u", r_seed);
+    printf("> Keyrange:\n>\t>Min: %d\n>\t>Max: %d\n", keyrange.min, keyrange.max);
+    printf("> Levels of skiplist: %d\n", levels);
+    printf("> Probability for levels: %f\n", prob);
+    #endif
     int range = keyrange.max - keyrange.min;
     struct bench_result *result = malloc(sizeof(struct bench_result));
     memset(&result->counters, 0, sizeof(result->counters));
@@ -261,7 +273,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
             key = unique_keys_next(unique_keys, random_state);
             
         }
-        else if (strat == SUCCESIVE)
+        else if (strat == SUCCESSIVE)
         {
             key++;
             if (key > keyrange.max)
@@ -368,7 +380,7 @@ int main(int argc, char const* argv[]) {
 
     uint16_t time_interval = atoi(argv[1]);
     uint16_t n_prefill = atoi(argv[2]);
-    operations_mix_t operations_mix = {atof(argv[3]), atof(argv[4]), atof(argv[5])};
+    operations_mix_t operations_mix = {atof(argv[3]), atof(argv[5])};
     keyrange_t keyrange = {atoi(argv[6]), atoi(argv[7])};
     uint8_t levels = atoi(argv[8]);
     double prob = atof(argv[9]);
@@ -376,7 +388,7 @@ int main(int argc, char const* argv[]) {
 
     if (strcmp(argv[10],"random") == 0) strat = RANDOM;
     else if (strcmp(argv[10],"unique") == 0) strat = UNIQUE;
-    else strat = SUCCESIVE;
+    else strat = SUCCESSIVE;
     
 
     struct bench_result* result = seq_skiplist_benchmark(time_interval, n_prefill, operations_mix,

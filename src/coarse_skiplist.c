@@ -188,7 +188,7 @@ struct bench_result* coarse_skiplist_benchmark(uint16_t num_threads, uint16_t ti
             } else if (strat == UNIQUE) {
                 static int counter = 0;
                 key = local_range_min + (counter++ % (local_range_max - local_range_min + 1));
-            } else if (strat == SUCCESIVE) {
+            } else if (strat == SUCCESSIVE) {
                 key = local_range_min++;
                 if (key > local_range_max) key = local_range_min;
             }

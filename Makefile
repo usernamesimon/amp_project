@@ -3,6 +3,7 @@ NAME = seq_skiplist coarse_skiplist
 CC ?= gcc
 RM ?= @rm
 MKDIR ?= @mkdir
+PYTHON ?= @python3
 
 CFLAGS := -O3 -Wall -Wextra -fopenmp
 
@@ -50,7 +51,7 @@ bench:
 
 small-bench: $(BUILD_DIR) $(NAME).so $(DATA_DIR)
 	@echo "Running small-bench ..."
-	@python benchmark.py
+	$(PYTHON) benchmark.py
 
 small-plot: 
 	@echo "Plotting small-bench results ..."

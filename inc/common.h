@@ -15,7 +15,7 @@ struct bench_result {
 
 typedef struct _operations_mix{
     float insert_p;
-    float delete_p;
+    // delete_p is implied by 1 - (insert_p + contain_p)
     float contain_p;
 } operations_mix_t;
 
@@ -32,7 +32,7 @@ typedef enum _key_overlap{
   PER_THREAD  /* Each thread has its own independent range */
 } key_overlap;
 
-typedef enum _sel_strat{RANDOM, UNIQUE, SUCCESIVE} selection_strategy;
+typedef enum _sel_strat{RANDOM, UNIQUE, SUCCESSIVE} selection_strategy;
 
 /* Structure to loop through a random permutation of keys when doing benchmarks. 
     Initialize the array with array[i] = i. Then swap current with a random
