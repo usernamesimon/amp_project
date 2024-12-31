@@ -61,21 +61,5 @@ bool coarse_skiplist_add(coarse_list* list, int key, void* data);
   Returns false if key was not found. */
 bool coarse_skiplist_remove(coarse_list* list, int key, void** data_out);
 
-/* Execute a benchmark with the following parameters:
-    time_interval -> time to do throughput measurement (in seconds)
-    n_prefill -> Number of prefill items
-    operations_mix -> Percentage of inserts, deletes, and contains
-    strat -> Selection strategy for keys (RANDOM, UNIQUE, SUCCESIVE)
-    r_seed -> Seed for random number generator
-    keyrange -> Range for keys to be used
-    levels -> Number of levels in the skip list
-    prob -> Probability of a node being in higher levels
-    num_threads -> Number of threads for concurrent execution
-    repetitions -> Number of repetitions of the benchmark
-    range_type -> Key range type (COMMON, DISJOINT, PER_THREAD)
-*/
-struct bench_result* coarse_skiplist_benchmark(uint16_t num_threads, uint16_t time_interval, uint16_t n_prefill, 
-  operations_mix_t operations_mix, selection_strategy strat, key_overlap overlap,
-  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob);
 
 #endif // SEQ_SKIPLIST_H

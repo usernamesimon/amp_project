@@ -1,12 +1,15 @@
+#ifndef H_COMMON
+#define H_COMMON
+
 /* These structs should to match the definition in benchmark.py
  */
 struct counters {
     int failed_adds;
-    int successful_adds;
+    int successfull_adds;
     int failed_removes;
-    int succesfull_removes;
+    int successfull_removes;
     int failed_contains;
-    int succesfull_contains;
+    int successfull_contains;
 };
 struct bench_result {
     float time;
@@ -43,3 +46,5 @@ typedef struct _unique_keyarray{
     int* shuffled;  /* Keeps track up to which point the array has been shuffled */
     int size;       /* size in number of ints */
 } unique_keyarray_t;
+
+#endif

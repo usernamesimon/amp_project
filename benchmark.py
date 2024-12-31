@@ -8,11 +8,11 @@ class cBenchCounters(ctypes.Structure):
     This has to match the returned struct in library.c
     '''
     _fields_ = [ ("failed_adds", ctypes.c_int),
-                 ("successful_adds", ctypes.c_int),
+                 ("successfull_adds", ctypes.c_int),
                  ("failed_removes", ctypes.c_int),
-                 ("succesfull_removes", ctypes.c_int),
+                 ("successfull_removes", ctypes.c_int),
                  ("failed_contains", ctypes.c_int),
-                 ("succesfull_contains", ctypes.c_int) ]
+                 ("successfull_contains", ctypes.c_int) ]
 
 class cBenchResult(ctypes.Structure):
     '''
@@ -96,21 +96,49 @@ class Benchmark:
             pass
         with open(f"{self.basedir}/data/{self.now}/avg/{self.name}.data", "w")\
                 as datafile:
-            datafile.write(f"n_threads datapoint\n")
+            datafile.write(f"n_threads, succesfull_adds, failed_adds, succesfull_contains, "
+                           "failed_contains, successfull_removes, failed_removes, "
+                           "total_operations, processor_time, throughput\n")
             for x, box in self.data.items():
                 
-                datafile.write(f"{x} {sum(box)/len(box)}\n")
+                times = [p.contents.time for p in box]
+                avg_time = sum(times)/len(times)
+
+                s_adds = [p.contents.counters.successfull_adds for p in box]
+                avg_s_adds = sum(s_adds)/len(s_adds)
+                f_adds = [p.contents.counters.failed_adds for p in box]
+                avg_f_adds = sum(f_adds)/len(f_adds)
+
+                s_removes = [p.contents.counters.successfull_removes for p in box]
+                avg_s_removes = sum(s_removes)/len(s_removes)
+                f_removes = [p.contents.counters.failed_removes for p in box]
+                avg_f_removes = sum(f_removes)/len(f_removes)
+
+                s_contains = [p.contents.counters.successfull_adds for p in box]
+                avg_s_contains = sum(s_contains)/len(s_contains)
+                f_contains = [p.contents.counters.failed_adds for p in box]
+                avg_f_contains = sum(f_contains)/len(f_contains)
+
+                total_ops = [s_a+f_a+s_r+f_r+s_c+f_c for s_a,f_a,s_r,f_r,s_c,f_c in
+                             zip(s_adds, f_adds, s_removes, f_removes, s_contains, f_contains)]
+                avg_total_ops = sum(total_ops)/len(total_ops)
+
+                avg_throughput = sum(total_ops)/sum(times)
+                
+                datafile.write(f"{x}, {avg_s_adds}, {avg_f_adds}, {avg_s_contains}, "
+                               f"{avg_f_contains}, {avg_s_removes}, {avg_f_removes}, "
+                               f"{avg_total_ops}, {avg_time}, {avg_throughput}\n")
 
 def benchmark():
     '''
     Requires the binary to also be present as a shared library.
     '''
     basedir = os.path.dirname(os.path.abspath(__file__))
-    seq_binary = ctypes.CDLL( f"{basedir}/build/seq_skiplist.so" )
+    benchmark_binary = ctypes.CDLL( f"{basedir}/build/benchmark.so" )
     # Set the types for each benchmark function
-    seq_binary.seq_skiplist_benchmark.argtypes = [ctypes.c_uint16, ctypes.c_uint16, 
+    benchmark_binary.seq_skiplist_benchmark.argtypes = [ctypes.c_uint16, ctypes.c_uint16, 
         cOperationsMix, cSelectionStrategy, ctypes.c_uint, cKeyrange, ctypes.c_uint8, ctypes.c_double ]
-    seq_binary.seq_skiplist_benchmark.restype = ctypes.POINTER(cBenchResult)
+    benchmark_binary.seq_skiplist_benchmark.restype = ctypes.POINTER(cBenchResult)
 
     # The number of threads. This is the x-axis in the benchmark, i.e., the
     # parameter that is 'sweeped' over.
@@ -130,7 +158,7 @@ def benchmark():
     # just one parameter, we cannot write (1000) because that would not parse
     # as a tuple, instead python understands a trailing comma as a tuple with
     # just one entry.
-    sequential = Benchmark(seq_binary.seq_skiplist_benchmark, 
+    sequential = Benchmark(benchmark_binary.seq_skiplist_benchmark, 
             (time, prefill, op_mix, strat, seed, keyrange, levels, prob),
             [1], repetitions, basedir, "sequential")
 

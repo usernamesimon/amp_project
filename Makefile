@@ -1,5 +1,3 @@
-NAME = seq_skiplist coarse_skiplist
-
 CC ?= gcc
 RM ?= @rm
 MKDIR ?= @mkdir
@@ -12,7 +10,14 @@ BUILD_DIR = build
 DATA_DIR = data
 INCLUDES = inc
 
+SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c
+NAME = $(SOURCES:%.c=%)
+OBJECTS= $(SOURCES:%.c=%.o)
+
 all: seq_skiplist
+
+deb: 
+	@echo $(OBJECTS)
 
 $(DATA_DIR):
 	@echo "Creating data directory: $(DATA_DIR)"
@@ -22,13 +27,21 @@ $(BUILD_DIR):
 	@echo "Creating build directory: $(BUILD_DIR)"
 	$(MKDIR) $(BUILD_DIR)
 
-seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
+benchmark.o: $(SRC_DIR)/benchmark.c
 	@echo "Compiling $<"
 	$(CC) -O3 -Wall -Wextra -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
-seq_skiplist: seq_skiplist.o
+benchmark.so: $(OBJECTS)
 	@echo "Linking $@"
-	$(CC) -O3 -Wall -Wextra -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
+	$(CC) -O3 -Wall -Wextra -fPIC -shared -o $(BUILD_DIR)/$@ $(OBJECTS:%=$(BUILD_DIR)/%) 
+
+seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
+	@echo "Compiling $<"
+	$(CC) -O3 -Wall -Wextra -nostartfiles -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+# seq_skiplist: seq_skiplist.o
+# 	@echo "Linking $@"
+# 	$(CC) -O3 -Wall -Wextra -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
 seq_skiplist.so: seq_skiplist.o
 	@echo "Linking $@"
@@ -38,9 +51,9 @@ coarse_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
 	@echo "Compiling $<"
 	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
-coarse_skiplist: coarse_skiplist.o
-	@echo "Linking $@"
-	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
+# coarse_skiplist: coarse_skiplist.o
+# 	@echo "Linking $@"
+# 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
 coarse_skiplist.so: coarse_skiplist.o
 	@echo "Linking $@"
@@ -49,7 +62,7 @@ coarse_skiplist.so: coarse_skiplist.o
 bench:
 	@echo "This could run a sophisticated benchmark"
 
-small-bench: $(BUILD_DIR) $(NAME).so $(DATA_DIR)
+small-bench: $(BUILD_DIR) $(DATA_DIR) benchmark.so
 	@echo "Running small-bench ..."
 	$(PYTHON) benchmark.py
 

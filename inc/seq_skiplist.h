@@ -5,21 +5,21 @@
 #include <stdbool.h>
 #include "common.h"
 
-typedef struct _node {
+typedef struct _seq_node {
   /* array of next pointers, next[0] holds next element
   in level 0, next[1] the next element in level 1 if it
   exists or null if this node is not present in level 1
   and above */
-  struct _node** next;
+  struct _seq_node** next;
 
   /* the key this node is identified with */
   int key;
   void* data;
-} node;
+} seq_node;
 
 typedef struct _seq_list {
   /* Head node of the skip list */
-  node* head;
+  seq_node* head;
 
   /* Number of levels in the skip list */
   uint8_t levels;
@@ -49,7 +49,7 @@ void seq_skiplist_destroy(seq_list* list);
 /* Search for an element in the list.
   Return a node pointer to the element if key is found in list,
   otherwise return NULL */
-node* seq_skiplist_contains(seq_list* list, int key);
+seq_node* seq_skiplist_contains(seq_list* list, int key);
 
 /* Add an element with key and data to the list.
   Return TRUE if inserted or FALSE if insertion failed */
@@ -60,22 +60,5 @@ bool seq_skiplist_add(seq_list* list, int key, void* data);
   to the data element it contained.
   Returns false if key was not found. */
 bool seq_skiplist_remove(seq_list* list, int key, void** data_out);
-
-/* Execute a benchmark with the following parameters:
-    time_interval -> time to do throughput measurement (in seconds)
-    n_prefill -> Number of prefill items
-    operations_mix -> Percentage of inserts, deletes, and contains
-    strat -> Selection strategy for keys (RANDOM, UNIQUE, SUCCESIVE)
-    r_seed -> Seed for random number generator
-    keyrange -> Range for keys to be used
-    levels -> Number of levels in the skip list
-    prob -> Probability of a node being in higher levels
-    num_threads -> Number of threads for concurrent execution
-    repetitions -> Number of repetitions of the benchmark
-    range_type -> Key range type (COMMON, DISJOINT, PER_THREAD)
-*/
-struct bench_result* seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_prefill, 
-  operations_mix_t operations_mix, selection_strategy strat,
-  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob);
 
 #endif // SEQ_SKIPLIST_H
