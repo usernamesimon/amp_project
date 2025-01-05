@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "lock_free_skiplist.h": "c"
+    }
+}
