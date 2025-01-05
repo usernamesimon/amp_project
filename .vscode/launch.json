@@ -39,10 +39,10 @@
     },
 
     {
-      "name": "Run lock_free_skiplist_benchmark123",
+      "name": "Run lock_free_skiplist_benchmark",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/lock_free_skiplist_benchmark123",
+      "program": "${workspaceFolder}/lock_free_skiplist_benchmark",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
