@@ -86,4 +86,9 @@ clean:
 	$(RM) -Rf $(BUILD_DIR)
 	$(RM) -f $(NAME) $(NAME).so
 
+lock_free_skiplist_benchmark: $(SRC_DIR)/lock_free_skip_list_benchmark.c $(SRC_DIR)/lock_free_skiplist.c
+	@echo "Compiling lock_free_skiplist_benchmark ..."
+	$(CC) -o lock_free_skiplist_benchmark $(SRC_DIR)/lock_free_skip_list_benchmark.c $(SRC_DIR)/lock_free_skiplist.c -I$(INCLUDES) -pthread -O2
+
+
 .PHONY: all clean report

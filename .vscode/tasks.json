@@ -1,6 +1,26 @@
 {
   "tasks": [
     {
+      "label": "build-lock-free-skiplist",
+      "type": "shell",
+      "command": "gcc",
+      "args": [
+          "-o",
+          "lock_free_skiplist_benchmark123",
+          "./src/lock_free_skip_list_benchmark.c",
+          "./src/lock_free_skiplist.c",
+          "-I/home/kras/Documents/amp_project/inc/",
+          "-pthread",
+          "-O2"
+      ],
+      "group": {
+          "kind": "build",
+          "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "detail": "Generated task to build lock_free_skiplist_benchmark123."
+  },
+    {
       "type": "cppbuild",
       "label": "Build seq_skiplist",
       "command": "/usr/bin/gcc",
