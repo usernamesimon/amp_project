@@ -74,6 +74,33 @@
       ]
     },
     {
+      "name": "Launch benchmark",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/benchmark_debug",
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set up compilation directories for GDB",
+          "text": "-gdb-set directories ${workspaceFolder}/src:${workspaceFolder}/inc"
+        }
+      ],
+    },
+    {
       "name": "C/C++: gcc build and debug active file",
       "type": "cppdbg",
       "request": "launch",

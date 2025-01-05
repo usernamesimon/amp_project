@@ -13,11 +13,9 @@ INCLUDES = inc
 SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c
 NAME = $(SOURCES:%.c=%)
 OBJECTS= $(SOURCES:%.c=%.o)
+D_OBJECTS = $(SOURCES:%.c=%_debug.o)
 
 all: seq_skiplist
-
-deb: 
-	@echo $(OBJECTS)
 
 $(DATA_DIR):
 	@echo "Creating data directory: $(DATA_DIR)"
@@ -29,15 +27,27 @@ $(BUILD_DIR):
 
 benchmark.o: $(SRC_DIR)/benchmark.c
 	@echo "Compiling $<"
-	$(CC) -O3 -Wall -Wextra -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+benchmark_debug.o: $(SRC_DIR)/benchmark.c
+	@echo "Compiling $<"
+	$(CC) -fopenmp -Wall -Wextra -g -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 benchmark.so: $(OBJECTS)
 	@echo "Linking $@"
-	$(CC) -O3 -Wall -Wextra -fPIC -shared -o $(BUILD_DIR)/$@ $(OBJECTS:%=$(BUILD_DIR)/%) 
+	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(OBJECTS:%=$(BUILD_DIR)/%) 
+
+benchmark_debug: $(D_OBJECTS) benchmark_debug.o
+	@echo "Linking $@"
+	$(CC) -g -fopenmp -Wall -Wextra -fPIC -o $(BUILD_DIR)/$@ $(D_OBJECTS:%=$(BUILD_DIR)/%) 
 
 seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
 	@echo "Compiling $<"
 	$(CC) -O3 -Wall -Wextra -nostartfiles -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+seq_skiplist_debug.o: $(SRC_DIR)/seq_skiplist.c
+	@echo "Compiling $<"
+	$(CC) -g -Wall -Wextra -nostartfiles -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 # seq_skiplist: seq_skiplist.o
 # 	@echo "Linking $@"
@@ -50,6 +60,10 @@ seq_skiplist.so: seq_skiplist.o
 coarse_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
 	@echo "Compiling $<"
 	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+coarse_skiplist_debug.o: $(SRC_DIR)/coarse_skiplist.c
+	@echo "Compiling $<"
+	$(CC) -fopenmp -Wall -Wextra -g -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 # coarse_skiplist: coarse_skiplist.o
 # 	@echo "Linking $@"

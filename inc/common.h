@@ -32,7 +32,6 @@ typedef struct _keyrange{
 typedef enum _key_overlap{
   COMMON,     /* All threads share the same key range */
   DISJOINT,   /* Each thread has a distinct key range */
-  PER_THREAD  /* Each thread has its own independent range */
 } key_overlap;
 
 typedef enum _sel_strat{RANDOM, UNIQUE, SUCCESSIVE} selection_strategy;
@@ -46,5 +45,7 @@ typedef struct _unique_keyarray{
     int* shuffled;  /* Keeps track up to which point the array has been shuffled */
     int size;       /* size in number of ints */
 } unique_keyarray_t;
+
+typedef enum _implementation{SEQUENTIAL, COARSE, FINE, LOCK_FREE} implementation;
 
 #endif

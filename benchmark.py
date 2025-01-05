@@ -37,13 +37,18 @@ class CtypesEnum(IntEnum):
     
 class cKeyOverlap(CtypesEnum):
     COMMON = 0,
-    DISJOINT = 1,
-    PER_THREAD = 2
+    DISJOINT = 1
 
 class cSelectionStrategy(CtypesEnum):
     RANDOM = 0,
     UNIQUE = 1,
     SUCCESSIVE = 2
+
+class cImplementation(CtypesEnum):
+    SEQUENTIAL = 0,
+    COARSE = 1,
+    FINE = 2,
+    LOCK_FREE = 3
 
 
 class Benchmark:
@@ -74,13 +79,20 @@ class Benchmark:
         print(f"Starting Benchmark run at {self.now}")
 
         
-        tmp = []
+    
         for x in self.threads:
+            tmp = []
             for r in range(0, self.repetitions_per_point):
                 paras = self.parameters
-                result = self.bench_function(*paras)
+                if len(self.threads) > 1:
+                    result = self.bench_function(ctypes.c_uint16(x), *paras)
+                else:
+                    result = self.bench_function(*paras)
                 tmp.append( result )
             self.data[x] = tmp
+        
+        end_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        print(f"Finished Benchmark run at {end_time}")
 
     def write_avg_data(self):
         '''
@@ -140,6 +152,11 @@ def benchmark():
         cOperationsMix, cSelectionStrategy, ctypes.c_uint, cKeyrange, ctypes.c_uint8, ctypes.c_double ]
     benchmark_binary.seq_skiplist_benchmark.restype = ctypes.POINTER(cBenchResult)
 
+    benchmark_binary.parallel_skiplist_benchmark.argtypes = \
+    [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint16, cOperationsMix, cSelectionStrategy, cKeyOverlap,
+    ctypes.c_uint, cKeyrange, ctypes.c_uint8, ctypes.c_double, cImplementation]
+    benchmark_binary.parallel_skiplist_benchmark.restype = ctypes.POINTER(cBenchResult)
+
     # The number of threads. This is the x-axis in the benchmark, i.e., the
     # parameter that is 'sweeped' over.
     num_threads = [1,2,4,8,10,20,64]#,128,256]
@@ -149,10 +166,12 @@ def benchmark():
     prefill = ctypes.c_uint16(1000)
     op_mix = cOperationsMix(0.1, 0.8)
     strat = cSelectionStrategy(cSelectionStrategy.UNIQUE)
+    overlap = cKeyOverlap(cKeyOverlap.COMMON)
     seed = ctypes.c_uint(12345)
     keyrange = cKeyrange(0, 100000)
     levels = ctypes.c_uint8(4)
     prob = ctypes.c_double(0.5)
+    impl = cImplementation(cImplementation.COARSE)
 
     # Parameters for the benchmark are passed in a tuple, here (1000,). To pass
     # just one parameter, we cannot write (1000) because that would not parse
@@ -161,14 +180,16 @@ def benchmark():
     sequential = Benchmark(benchmark_binary.seq_skiplist_benchmark, 
             (time, prefill, op_mix, strat, seed, keyrange, levels, prob),
             [1], repetitions, basedir, "sequential")
-
-    #smallbench_100 = Benchmark(binary.small_bench, (100,), 3,
-    #                           num_threads, basedir, "smallbench_100")
+    
+    coarse = Benchmark(benchmark_binary.parallel_skiplist_benchmark,
+            (time, prefill, op_mix, strat, overlap, seed, keyrange, levels, prob, impl),
+            num_threads, repetitions, basedir, "coarse")
 
     sequential.run()
     sequential.write_avg_data()
-    #smallbench_100.run()
-    #smallbench_100.write_avg_data()
+    coarse.run()
+    coarse.write_avg_data()
+    
 
 if __name__ == "__main__":
     benchmark()
