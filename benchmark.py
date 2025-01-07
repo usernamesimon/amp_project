@@ -18,7 +18,7 @@ class cBenchResult(ctypes.Structure):
     '''
     This has to match the returned struct in library.c
     '''
-    _fields_ = [ ("time", ctypes.c_float),
+    _fields_ = [ ("cpu_time", ctypes.c_float),
                  ("counters", cBenchCounters) ]
     
 class cOperationsMix(ctypes.Structure):
@@ -57,14 +57,15 @@ class Benchmark:
     parameter xrange using the fixed set of inputs for every point. It simply
     averages the results over the given amount of repetitions.
     '''
-    def __init__(self, bench_function, parameters,
-                 threads, repetitions_per_point, basedir, name):
-        self.bench_function = bench_function
+    def __init__(self, binary, parameters,
+                 threads, repetitions_per_point, basedir, graph_name):
+        self.binary = binary
         self.parameters = parameters
+        self.seq_parameters = tuple(x for x in parameters if not(type(x) is cKeyOverlap))
         self.threads = threads
         self.repetitions_per_point = repetitions_per_point
         self.basedir = basedir
-        self.name = name
+        self.graph_name = graph_name
 
         self.data = {}
         self.now = None
@@ -78,23 +79,34 @@ class Benchmark:
         self.now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         print(f"Starting Benchmark run at {self.now}")
 
-        
+        tmp = []
+        print("SEQUENTIAL", end=" ", flush=True)
+        for r in range(0, self.repetitions_per_point):
+            result = self.binary.seq_skiplist_benchmark(*self.seq_parameters)
+            tmp.append( result )
+            print(".", end=" ", flush=True)
+        self.data[1] = tmp
+        self.write_avg_data("SEQUENTIAL")
+        self.data.clear()
+        print()
     
-        for x in self.threads:
-            tmp = []
-            for r in range(0, self.repetitions_per_point):
-                paras = self.parameters
-                if len(self.threads) > 1:
-                    result = self.bench_function(ctypes.c_uint16(x), *paras)
-                else:
-                    result = self.bench_function(*paras)
-                tmp.append( result )
-            self.data[x] = tmp
+        for impl in [cImplementation.COARSE]:
+            print(f"{impl.name}", end=" ", flush=True)
+            for x in self.threads:
+                tmp.clear()
+                for r in range(0, self.repetitions_per_point):
+                    result = self.binary.parallel_skiplist_benchmark(ctypes.c_uint16(x), *self.parameters, impl)
+                    tmp.append( result )
+                    print(".", end=" ", flush=True)
+                self.data[x] = tmp.copy()
+            self.write_avg_data(impl.name)
+            self.data.clear()
+            print()
         
         end_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         print(f"Finished Benchmark run at {end_time}")
 
-    def write_avg_data(self):
+    def write_avg_data(self, filename):
         '''
         Writes averages for each point measured into a dataset in the data
         folder timestamped when the run was started.
@@ -103,17 +115,17 @@ class Benchmark:
             raise Exception("Benchmark was not run. Run before writing data.")
 
         try:
-            os.makedirs(f"{self.basedir}/data/{self.now}/avg")
+            os.makedirs(f"{self.basedir}/data/{self.now}/{self.graph_name}")
         except FileExistsError:
             pass
-        with open(f"{self.basedir}/data/{self.now}/avg/{self.name}.data", "w")\
+        with open(f"{self.basedir}/data/{self.now}/{self.graph_name}/{filename}.data", "w")\
                 as datafile:
-            datafile.write(f"n_threads, succesfull_adds, failed_adds, succesfull_contains, "
-                           "failed_contains, successfull_removes, failed_removes, "
-                           "total_operations, processor_time, throughput\n")
+            datafile.write(f"n_threads succesfull_adds failed_adds succesfull_contains "
+                           "failed_contains successfull_removes failed_removes "
+                           "total_operations processor_time throughput\n")
             for x, box in self.data.items():
                 
-                times = [p.contents.time for p in box]
+                times = [p.contents.cpu_time for p in box]
                 avg_time = sum(times)/len(times)
 
                 s_adds = [p.contents.counters.successfull_adds for p in box]
@@ -137,9 +149,9 @@ class Benchmark:
 
                 avg_throughput = sum(total_ops)/sum(times)
                 
-                datafile.write(f"{x}, {avg_s_adds}, {avg_f_adds}, {avg_s_contains}, "
-                               f"{avg_f_contains}, {avg_s_removes}, {avg_f_removes}, "
-                               f"{avg_total_ops}, {avg_time}, {avg_throughput}\n")
+                datafile.write(f"{x} {avg_s_adds} {avg_f_adds} {avg_s_contains} "
+                               f"{avg_f_contains} {avg_s_removes} {avg_f_removes} "
+                               f"{avg_total_ops} {avg_time} {avg_throughput}\n")
 
 def benchmark():
     '''
@@ -160,10 +172,10 @@ def benchmark():
     # The number of threads. This is the x-axis in the benchmark, i.e., the
     # parameter that is 'sweeped' over.
     num_threads = [1,2,4,8,10,20,64]#,128,256]
-    repetitions = 3
+    repetitions = 2
 
-    time = ctypes.c_uint16(1)
-    prefill = ctypes.c_uint16(1000)
+    time = ctypes.c_uint16(5)
+    prefill = ctypes.c_uint16(10000)
     op_mix = cOperationsMix(0.1, 0.8)
     strat = cSelectionStrategy(cSelectionStrategy.UNIQUE)
     overlap = cKeyOverlap(cKeyOverlap.COMMON)
@@ -171,24 +183,24 @@ def benchmark():
     keyrange = cKeyrange(0, 100000)
     levels = ctypes.c_uint8(4)
     prob = ctypes.c_double(0.5)
-    impl = cImplementation(cImplementation.COARSE)
+    impl = [cImplementation(cImplementation.COARSE)]
 
     # Parameters for the benchmark are passed in a tuple, here (1000,). To pass
     # just one parameter, we cannot write (1000) because that would not parse
     # as a tuple, instead python understands a trailing comma as a tuple with
     # just one entry.
-    sequential = Benchmark(benchmark_binary.seq_skiplist_benchmark, 
+    sequential = Benchmark(benchmark_binary, 
             (time, prefill, op_mix, strat, seed, keyrange, levels, prob),
             [1], repetitions, basedir, "sequential")
     
-    coarse = Benchmark(benchmark_binary.parallel_skiplist_benchmark,
-            (time, prefill, op_mix, strat, overlap, seed, keyrange, levels, prob, impl),
-            num_threads, repetitions, basedir, "coarse")
+    coarse = Benchmark(benchmark_binary,
+            (time, prefill, op_mix, strat, overlap, seed, keyrange, levels, prob),
+            num_threads, repetitions, basedir, "small-bench")
 
-    sequential.run()
-    sequential.write_avg_data()
+    #sequential.run()
+    #sequential.write_avg_data()
     coarse.run()
-    coarse.write_avg_data()
+    #coarse.write_avg_data()
     
 
 if __name__ == "__main__":

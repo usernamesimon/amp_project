@@ -12,7 +12,7 @@ struct counters {
     int successfull_contains;
 };
 struct bench_result {
-    float time;
+    float cpu_time;
     struct counters counters;
 };
 

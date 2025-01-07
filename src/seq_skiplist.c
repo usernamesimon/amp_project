@@ -134,7 +134,7 @@ bool seq_skiplist_remove(seq_list* list, int key, void** data_out) {
     return true;
 }
 
-#ifdef DEBUG
+#ifdef DEBUG2
 #include <stdio.h>
 #include <string.h>
 #define LINELEN (1024)
@@ -152,7 +152,7 @@ void print_list(seq_list* list) {
   }
   
   /* print head sentinel node */
-  node** current = (node**)malloc(sizeof(node*)*list->levels);
+  seq_node** current = (seq_node**)malloc(sizeof(seq_node*)*list->levels);
   for (size_t i = 0; i < list->levels; i++)
   {
     current[i] = list->head;

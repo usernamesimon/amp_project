@@ -47,7 +47,7 @@ seq_skiplist.o: $(SRC_DIR)/seq_skiplist.c
 
 seq_skiplist_debug.o: $(SRC_DIR)/seq_skiplist.c
 	@echo "Compiling $<"
-	$(CC) -g -Wall -Wextra -nostartfiles -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+	$(CC) -g -Wall -Wextra -nostartfiles -DDEBUG -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 # seq_skiplist: seq_skiplist.o
 # 	@echo "Linking $@"
@@ -63,7 +63,7 @@ coarse_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
 
 coarse_skiplist_debug.o: $(SRC_DIR)/coarse_skiplist.c
 	@echo "Compiling $<"
-	$(CC) -fopenmp -Wall -Wextra -g -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+	$(CC) -fopenmp -Wall -Wextra -g -DDEBUG -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 # coarse_skiplist: coarse_skiplist.o
 # 	@echo "Linking $@"

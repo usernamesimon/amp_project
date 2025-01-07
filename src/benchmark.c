@@ -2,6 +2,7 @@
 #include "../inc/seq_skiplist.h"
 #include "../inc/coarse_skiplist.h"
 
+#include <unistd.h>
 #include <time.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -130,7 +131,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     int range = keyrange.max - keyrange.min;
     struct bench_result *result = malloc(sizeof(struct bench_result));
     memset(&result->counters, 0, sizeof(result->counters));
-    result->time = 0.0;
+    result->cpu_time = 0.0;
 
     seq_list *skiplist = seq_skiplist_init(levels, prob, keyrange, r_seed);
     if (!skiplist)
@@ -206,7 +207,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         {
             interval = clock();
             res = seq_skiplist_add(skiplist, key, NULL);
-            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->cpu_time += (float)(clock() - interval) / CLOCKS_PER_SEC;
             result->counters.successfull_adds += res;
             result->counters.failed_adds += !res;
         }
@@ -214,7 +215,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         {
             interval = clock();
             res = seq_skiplist_contains(skiplist, key) != NULL;
-            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->cpu_time += (float)(clock() - interval) / CLOCKS_PER_SEC;
             result->counters.successfull_contains += res;
             result->counters.failed_contains += !res;
         }
@@ -222,7 +223,7 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
         {
             interval = clock();
             res = seq_skiplist_remove(skiplist, key, NULL);
-            result->time += (float)(clock() - interval) / CLOCKS_PER_SEC;
+            result->cpu_time += (float)(clock() - interval) / CLOCKS_PER_SEC;
             result->counters.successfull_removes += res;
             result->counters.failed_removes += !res;
         }
@@ -298,6 +299,20 @@ void skiplist_destroy(void *skiplist, implementation imp)
         break;
     }
 }
+struct timespec;
+
+bool time1_bigger(struct timespec* time1, struct timespec* time2) {
+    bool temp1 = (time1->tv_sec > time2->tv_sec);
+    bool temp2 = (time1->tv_sec == time2->tv_sec);
+    bool temp3 = (time1->tv_nsec > time2->tv_nsec);
+    return temp1 || (temp2 && temp3);
+}
+
+uint64_t time_diff(struct timespec* start, struct timespec* finish) {
+    uint64_t sec = (finish->tv_sec - start->tv_sec) * 1e9;
+    uint64_t nsec = finish->tv_nsec - start->tv_nsec;
+    return sec + nsec;
+}
 
 struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t time_interval, uint16_t n_prefill,
                                                  operations_mix_t operations_mix, selection_strategy strat, key_overlap overlap,
@@ -361,7 +376,7 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
     int failed_contains = 0;
     int successfull_removes = 0;
     int failed_removes = 0;
-    long max_time = 0;
+    uint64_t thread_time_ns = 0;
 
 #pragma omp parallel default(none) num_threads(num_threads)                         \
     shared(skiplist) \
@@ -369,9 +384,8 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
     private(die)                      \
     reduction(+ : successfull_adds, failed_adds, successfull_contains, failed_contains) \
     reduction(+: successfull_removes, failed_removes) \
-    reduction(max: max_time)
+    reduction(+: thread_time_ns)
     {
-        max_time = 0;
         int thread_num = omp_get_thread_num();
         /* initialize random state for thread */
         unsigned short int* thread_random = (unsigned short int*)malloc(6);
@@ -394,12 +408,14 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
         unique_keyarray_t* thread_keys;
         if (strat == UNIQUE) thread_keys = unique_keys_init(thread_range);
 
-        clock_t endtime = clock() + time_interval * CLOCKS_PER_SEC;
-        clock_t interval;
+        struct timespec start, end, endtime, now;
+        clock_gettime(CLOCK_REALTIME, &endtime);
+        endtime.tv_sec += time_interval;
+        clock_gettime(CLOCK_REALTIME, &now);
         bool res;
         int key = n_prefill;
 
-        while (clock() < endtime)
+        while (time1_bigger(&endtime, &now))
         {
             /* determine next key */
             if (strat == RANDOM)
@@ -422,28 +438,32 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
             drand48_r((struct drand48_data *)thread_random, &die);
             if (die < operations_mix.insert_p)
             {
-                interval = clock();
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
                 res = skiplist_add(skiplist, key, NULL, imp, thread_random);
-                max_time += clock() - interval;
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                thread_time_ns += time_diff(&start, &end);
                 successfull_adds += res;
                 failed_adds += !res;
             }
             else if (die < operations_mix.insert_p + operations_mix.contain_p)
             {
-                interval = clock();
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
                 res = skiplist_contains(skiplist, key, imp) != NULL;
-                max_time += clock() - interval;
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                thread_time_ns += time_diff(&start, &end);
                 successfull_contains += res;
                 failed_contains += !res;
             }
             else
             {
-                interval = clock();
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
                 res = skiplist_remove(skiplist, key, imp);
-                max_time += clock() - interval;
+                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                thread_time_ns += time_diff(&start, &end);
                 successfull_removes += res;
                 failed_removes += !res;
             }
+            clock_gettime(CLOCK_REALTIME, &now);
         }
         free(thread_random);
     }
@@ -456,17 +476,17 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
     result->counters.failed_contains=failed_contains;
     result->counters.successfull_removes=successfull_removes;
     result->counters.failed_removes=failed_removes;
-    result->time = 1.0*max_time/CLOCKS_PER_SEC;
+    result->cpu_time = 1.0*thread_time_ns/1e9;
 
     skiplist_destroy(skiplist, imp);
     return result;
 }
 
 
-int main(int argc, char const *argv[])
+int main(void)
 {
     uint16_t num_threads = 4;
-    uint16_t time_interval = 1;
+    uint16_t time_interval = 5;
     uint16_t n_prefill = 10000;
     operations_mix_t operations_mix = {0.1, 0.8};
     keyrange_t keyrange = {0, 100000};
@@ -488,7 +508,7 @@ int main(int argc, char const *argv[])
                       result->counters.successfull_contains + result->counters.failed_contains +
                       result->counters.successfull_removes + result->counters.failed_removes;
 
-    printf("Average Time Per Experiment: %.2f seconds\n", result->time);
+    printf("Average Time Per Experiment: %.2f seconds\n", result->cpu_time);
     printf("Total Operations: %.0f\n", total_ops);
     printf("Insertions: %d successful / %d attempted\n",
         result->counters.successfull_adds, result->counters.successfull_adds + result->counters.failed_adds);
@@ -496,7 +516,7 @@ int main(int argc, char const *argv[])
         result->counters.successfull_removes, result->counters.successfull_removes + result->counters.failed_removes);
     printf("Contains: %d successful / %d attempted\n",
         result->counters.successfull_contains, result->counters.successfull_contains + result->counters.failed_contains);
-    printf("Throughput: %.3e ops/sec\n", total_ops / result->time);
+    printf("Throughput: %.3e ops/sec\n", total_ops / result->cpu_time);
 
     free(result);
     return 0;
