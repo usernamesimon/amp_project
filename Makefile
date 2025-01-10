@@ -10,12 +10,12 @@ BUILD_DIR = build
 DATA_DIR = data
 INCLUDES = inc
 
-SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c
+SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c lock_free_skiplist.c
 NAME = $(SOURCES:%.c=%)
 OBJECTS= $(SOURCES:%.c=%.o)
 D_OBJECTS = $(SOURCES:%.c=%_debug.o)
 
-all: seq_skiplist
+all: $(OBJECTS)
 
 $(DATA_DIR):
 	@echo "Creating data directory: $(DATA_DIR)"
@@ -72,6 +72,10 @@ coarse_skiplist_debug.o: $(SRC_DIR)/coarse_skiplist.c
 coarse_skiplist.so: coarse_skiplist.o
 	@echo "Linking $@"
 	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
+
+lock_free_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
+	@echo "Compiling $<"
+	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
 
 bench:
 	@echo "This could run a sophisticated benchmark"

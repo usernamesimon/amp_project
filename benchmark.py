@@ -90,7 +90,7 @@ class Benchmark:
         self.data.clear()
         print()
     
-        for impl in [cImplementation.COARSE]:
+        for impl in [cImplementation.COARSE, cImplementation.LOCK_FREE]:
             print(f"{impl.name}", end=" ", flush=True)
             for x in self.threads:
                 tmp.clear()
@@ -174,7 +174,7 @@ def benchmark():
     num_threads = [1,2,4,8,10,20,64]#,128,256]
     repetitions = 2
 
-    time = ctypes.c_uint16(5)
+    time = ctypes.c_uint16(1)
     prefill = ctypes.c_uint16(10000)
     op_mix = cOperationsMix(0.1, 0.8)
     strat = cSelectionStrategy(cSelectionStrategy.UNIQUE)
