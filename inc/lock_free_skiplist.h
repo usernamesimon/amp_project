@@ -50,12 +50,12 @@ typedef struct {
         ((STRUCT *) ((uint8_t *) (ELEM) - offsetof (STRUCT, MEMBER)))
 #endif
 
-void skiplist_init(skiplist_raw* slist,
+void lock_free_skiplist_init(skiplist_raw* slist,
                    skiplist_cmp_t* cmp_func);
-void skiplist_destroy(skiplist_raw* slist);
+void lock_free_skiplist_destroy(skiplist_raw* slist);
 
-void skiplist_init_node(skiplist_node* node);
-void skiplist_destroy_node(skiplist_node* node);
+void lock_free_skiplist_init_node(skiplist_node* node);
+void lock_free_skiplist_destroy_node(skiplist_node* node);
 
 size_t skiplist_get_size(skiplist_raw* slist);
 
@@ -65,12 +65,12 @@ skiplist_raw_config skiplist_get_config(skiplist_raw* slist);
 void skiplist_set_config(skiplist_raw* slist,
                          skiplist_raw_config config);
 
-int skiplist_insert(skiplist_raw* slist,
+int lock_free_skiplist_insert(skiplist_raw* slist,
                     skiplist_node* node);
 int skiplist_insert_unique(skiplist_raw *slist,
                           skiplist_node *node);
 
-skiplist_node* skiplist_find(skiplist_raw* slist,
+skiplist_node* lock_free_skiplist_find(skiplist_raw* slist,
                              skiplist_node* query);
 skiplist_node* skiplist_find_smaller_or_equal(skiplist_raw* slist,
                                               skiplist_node* query);
@@ -81,7 +81,7 @@ int skiplist_erase_node_passive(skiplist_raw* slist,
                                 skiplist_node* node);
 int skiplist_erase_node(skiplist_raw *slist,
                         skiplist_node *node);
-int skiplist_erase(skiplist_raw* slist,
+int lock_free_skiplist_erase(skiplist_raw* slist,
                    skiplist_node* query);
 
 int skiplist_is_valid_node(skiplist_node* node);
@@ -89,7 +89,7 @@ int skiplist_is_safe_to_free(skiplist_node* node);
 void skiplist_wait_for_free(skiplist_node* node);
 
 void skiplist_grab_node(skiplist_node* node);
-void skiplist_release_node(skiplist_node* node);
+void lock_free_skiplist_release_node(skiplist_node* node);
 
 skiplist_node* skiplist_next(skiplist_raw* slist,
                              skiplist_node* node);

@@ -54,7 +54,7 @@ static inline void skiplist_init_internal(skiplist_node *node, size_t top_layer)
 }
 
 // Initialize a skiplist with the specified comparison function
-void skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
+void lock_free_skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
 {
     // Initialize comparison function and auxiliary data to NULL
     slist->cmp_func = NULL;
@@ -70,8 +70,8 @@ void skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
     slist->top_layer = 0;
 
     // Initialize head and tail nodes
-    skiplist_init_node(&slist->head);
-    skiplist_init_node(&slist->tail);
+    lock_free_skiplist_init_node(&slist->head);
+    lock_free_skiplist_init_node(&slist->tail);
 
     // Initialize head and tail nodes with maximum layer
     skiplist_init_internal(&slist->head, slist->max_levels);
@@ -93,11 +93,11 @@ void skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
     slist->cmp_func = cmp_func;
 }
 
-void skiplist_destroy(skiplist_raw *slist)
+void lock_free_skiplist_destroy(skiplist_raw *slist)
 {
     //Destroy head and tail nodes
-    skiplist_destroy_node(&slist->head);
-    skiplist_destroy_node(&slist->tail);
+    lock_free_skiplist_destroy_node(&slist->head);
+    lock_free_skiplist_destroy_node(&slist->tail);
     
     FREE_MEMORY(slist->layer_entries);
     slist->layer_entries = NULL;
@@ -107,7 +107,7 @@ void skiplist_destroy(skiplist_raw *slist)
 }
 
 // Initialize a skiplist node to its default state
-void skiplist_init_node(skiplist_node *node)
+void lock_free_skiplist_init_node(skiplist_node *node)
 {
     // Set the next pointer to NULL
     node->next = NULL;
@@ -124,7 +124,7 @@ void skiplist_init_node(skiplist_node *node)
     node->ref_count = 0;
 }
 
-void skiplist_destroy_node(skiplist_node *node)
+void lock_free_skiplist_destroy_node(skiplist_node *node)
 {
     FREE_MEMORY(node->next);
     node->next = NULL;
@@ -137,7 +137,7 @@ size_t skiplist_get_size(skiplist_raw *slist)
     return val;
 }
 
-skiplist_raw_config skiplist_get_default_config()
+/* skiplist_raw_config skiplist_get_default_config()
 {
     skiplist_raw_config ret;
     ret.branching_factor = 3;
@@ -145,7 +145,7 @@ skiplist_raw_config skiplist_get_default_config()
     ret.aux = NULL;
     return ret;
 }
-
+ */
 skiplist_raw_config skiplist_get_config(skiplist_raw *slist)
 {
     skiplist_raw_config ret;
@@ -560,7 +560,7 @@ static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no
     }
 }
 
-int skiplist_insert(skiplist_raw *slist,
+int lock_free_skiplist_insert(skiplist_raw *slist,
                     skiplist_node *node)
 {
     return skiplist_add(slist, node, false);
@@ -660,7 +660,7 @@ find_retry:
     return NULL;
 }
 
-skiplist_node *skiplist_find(skiplist_raw *slist,
+skiplist_node *lock_free_skiplist_find(skiplist_raw *slist,
                              skiplist_node *query)
 {
     return skiplist_find_node(slist, query, EQUAL);
@@ -892,10 +892,10 @@ int skiplist_erase_node(skiplist_raw *slist,
     return ret;
 }
 
-int skiplist_erase(skiplist_raw *slist,
+int lock_free_skiplist_erase(skiplist_raw *slist,
                    skiplist_node *query)
 {
-    skiplist_node *found = skiplist_find(slist, query);
+    skiplist_node *found = lock_free_skiplist_find(slist, query);
     if (!found)
     {
         // key not found
@@ -947,7 +947,7 @@ void skiplist_grab_node(skiplist_node *node)
     ATOMIC_FETCH_ADD(node->ref_count, 1);
 }
 
-void skiplist_release_node(skiplist_node *node)
+void lock_free_skiplist_release_node(skiplist_node *node)
 {
 
     ATOMIC_FETCH_SUB(node->ref_count, 1);
