@@ -54,19 +54,22 @@ static inline void skiplist_init_internal(skiplist_node *node, size_t top_layer)
 }
 
 // Initialize a skiplist with the specified comparison function
-void lock_free_skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
-{
+skiplist_raw* lock_free_skiplist_init(uint8_t levels, uint8_t prob, skiplist_cmp_t* cmp_func) {
+    skiplist_raw* slist = (skiplist_raw*)malloc(sizeof(skiplist_raw));
+    if (!slist) return NULL;
+
     // Initialize comparison function and auxiliary data to NULL
     slist->cmp_func = NULL;
     slist->aux = NULL;
 
-    // Set default branching_factor and maximum levels values
-    slist->branching_factor = 3;
-    slist->max_levels = 16;
+    // Set prob and maximum levels values
+    slist->prob = prob;
+    slist->levels = levels;
     slist->total_nodes = 0;
 
     // Allocate memory for layer entries
-    ALLOCATE_MEMORY(atm_uint32_t, slist->layer_entries, slist->max_levels);
+    slist->layer_entries = (atm_uint32_t*)malloc(sizeof(atm_uint32_t) * slist->levels);
+    if (!slist->layer_entries) return NULL;
     slist->top_layer = 0;
 
     // Initialize head and tail nodes
@@ -74,12 +77,11 @@ void lock_free_skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
     lock_free_skiplist_init_node(&slist->tail);
 
     // Initialize head and tail nodes with maximum layer
-    skiplist_init_internal(&slist->head, slist->max_levels);
-    skiplist_init_internal(&slist->tail, slist->max_levels);
+    skiplist_init_internal(&slist->head, slist->levels);
+    skiplist_init_internal(&slist->tail, slist->levels);
 
     // Link head to tail for each layer
-    for (size_t layer = 0; layer < slist->max_levels; ++layer)
-    {
+    for (size_t layer = 0; layer < slist->levels; ++layer) {
         slist->head.next[layer] = &slist->tail;
         slist->tail.next[layer] = NULL;
     }
@@ -91,6 +93,8 @@ void lock_free_skiplist_init(skiplist_raw *slist, skiplist_cmp_t *cmp_func)
 
     // Set the comparison function
     slist->cmp_func = cmp_func;
+
+    return slist;
 }
 
 void lock_free_skiplist_destroy(skiplist_raw *slist)
@@ -140,7 +144,7 @@ size_t skiplist_get_size(skiplist_raw *slist)
 /* skiplist_raw_config skiplist_get_default_config()
 {
     skiplist_raw_config ret;
-    ret.branching_factor = 3;
+    ret.prob = 3;
     ret.maxLayer = 16;
     ret.aux = NULL;
     return ret;
@@ -149,8 +153,8 @@ size_t skiplist_get_size(skiplist_raw *slist)
 skiplist_raw_config skiplist_get_config(skiplist_raw *slist)
 {
     skiplist_raw_config ret;
-    ret.branching_factor = slist->branching_factor;
-    ret.maxLayer = slist->max_levels;
+    ret.prob = slist->prob;
+    ret.maxLayer = slist->levels;
     ret.aux = slist->aux;
     return ret;
 }
@@ -158,12 +162,12 @@ skiplist_raw_config skiplist_get_config(skiplist_raw *slist)
 void skiplist_set_config(skiplist_raw *slist,
                          skiplist_raw_config config)
 {
-    slist->branching_factor = config.branching_factor;
+    slist->prob = config.prob;
 
-    slist->max_levels = config.maxLayer;
+    slist->levels = config.maxLayer;
     if (slist->layer_entries)
         FREE_MEMORY(slist->layer_entries);
-    ALLOCATE_MEMORY(atm_uint32_t, slist->layer_entries, slist->max_levels);
+    ALLOCATE_MEMORY(atm_uint32_t, slist->layer_entries, slist->levels);
 
     slist->aux = config.aux;
 }
@@ -316,22 +320,14 @@ static inline skiplist_node *skiplist_next_internal(skiplist_raw *slist,
     return next_node;
 }
 
-static inline size_t skiplist_determine_top_layer(skiplist_raw *slist)
+static inline size_t skiplist_determine_top_layer(skiplist_raw *slist, unsigned short int random_state[3])
 {
     size_t layer = 0;
-    while (layer + 1 < slist->max_levels)
-    {
-        // coin filp
-        if (rand() % slist->branching_factor == 0)
-        {
-            // grow: 1/branching_factor probability
-            layer++;
-        }
-        else
-        {
-            // stop: 1 - 1/branching_factor probability
-            break;
-        }
+    for (size_t i = 1; i < slist->levels; i++) {
+        double die;
+        drand48_r((struct drand48_data*)random_state, &die);
+        if (die > slist->prob) break;
+        layer++;
     }
     return layer;
 }
@@ -395,7 +391,7 @@ static inline void finalize_insertion(skiplist_raw *slist, skiplist_node *node, 
 
     ATOMIC_FETCH_ADD(slist->total_nodes, 1);
     ATOMIC_FETCH_ADD(slist->layer_entries[node->top_layer], 1);
-    for (int ii = slist->max_levels - 1; ii >= 0; --ii)
+    for (int ii = slist->levels - 1; ii >= 0; --ii)
     {
         if (slist->layer_entries[ii] > 0)
         {
@@ -538,12 +534,12 @@ static inline int handle_insertion(skiplist_raw *slist, skiplist_node *node, boo
     return 0;
 }
 
-static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no_dup)
+static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no_dup, unsigned short int random_state[3])
 {
     pthread_t tid = pthread_self();
     size_t tid_hash = ((size_t)tid) % 256;
 
-    int top_layer = skiplist_determine_top_layer(slist);
+    int top_layer = skiplist_determine_top_layer(slist,(struct drand48_data *)random_state);
 
     // Initialize node before insertion
     initialize_node(node, top_layer);
@@ -561,16 +557,16 @@ static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no
 }
 
 int lock_free_skiplist_insert(skiplist_raw *slist,
-                    skiplist_node *node)
+                    skiplist_node *node,unsigned short int random_state[3])
 {
-    return skiplist_add(slist, node, false);
+    return skiplist_add(slist, node, false,random_state);
 }
 
-int skiplist_insert_unique(skiplist_raw *slist,
-                           skiplist_node *node)
+/* int skiplist_insert_unique(skiplist_raw *slist,
+                           skiplist_node *node, unsigned short int random_state[3])
 {
-    return skiplist_add(slist, node, true);
-}
+    return skiplist_add(slist, node, true, unsigned short int random_state[3]);
+} */
 
 typedef enum
 {
@@ -862,7 +858,7 @@ erase_node_retry:
 
     ATOMIC_FETCH_SUB(slist->total_nodes, 1);
     ATOMIC_FETCH_SUB(slist->layer_entries[node->top_layer], 1);
-    for (int ii = slist->max_levels - 1; ii >= 0; --ii)
+    for (int ii = slist->levels - 1; ii >= 0; --ii)
     {
         if (slist->layer_entries[ii] > 0)
         {

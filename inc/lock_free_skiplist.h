@@ -28,7 +28,7 @@ typedef struct _skiplist_node {
 typedef int skiplist_cmp_t(skiplist_node *a, skiplist_node *b, void *aux);
 
 typedef struct {
-    size_t branching_factor;
+    size_t prob;
     size_t maxLayer;
     void *aux;
 } skiplist_raw_config;
@@ -41,8 +41,8 @@ typedef struct {
     atm_uint32_t total_nodes;
     atm_uint32_t* layer_entries;
     atm_uint8_t top_layer;
-    uint8_t branching_factor;
-    uint8_t max_levels;
+    uint8_t prob;
+    uint8_t levels;
 } skiplist_raw;
 
 #ifndef _get_entry
@@ -50,8 +50,7 @@ typedef struct {
         ((STRUCT *) ((uint8_t *) (ELEM) - offsetof (STRUCT, MEMBER)))
 #endif
 
-void lock_free_skiplist_init(skiplist_raw* slist,
-                   skiplist_cmp_t* cmp_func);
+skiplist_raw* lock_free_skiplist_init(uint8_t levels, uint8_t prob, skiplist_cmp_t* cmp_func);
 void lock_free_skiplist_destroy(skiplist_raw* slist);
 
 void lock_free_skiplist_init_node(skiplist_node* node);
@@ -66,7 +65,7 @@ void skiplist_set_config(skiplist_raw* slist,
                          skiplist_raw_config config);
 
 int lock_free_skiplist_insert(skiplist_raw* slist,
-                    skiplist_node* node);
+                    skiplist_node* node,unsigned short int random_state[3]);
 int skiplist_insert_unique(skiplist_raw *slist,
                           skiplist_node *node);
 
