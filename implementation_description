@@ -1,0 +1,68 @@
+
+--------------------------------
+Sequential skiplist
+--------------------------------
+Sequential Skip List Implementation
+
+The sequential skip list is a probabilistic data structure designed for efficient single-threaded operations, offering logarithmic average time complexity for search, insertion, and deletion. It organizes elements hierarchically across multiple levels, where higher levels provide shortcuts to nodes in the lower levels, reducing traversal time.
+Key Features:
+
+    Node Structure:
+        Each node contains a key and an array of pointers (next), one for each level the node spans.
+        A special head node, initialized with pointers for all levels set to NULL, acts as the starting point.
+
+    Initialization:
+        The skip list is configured with a fixed number of levels and a promotion probability (prob), which determines the likelihood of a node being promoted to higher levels.
+        A random seed ensures consistent behavior for level assignment during debugging or repeated runs.
+
+    Search Operation:
+        The search starts at the topmost level of the head node and moves horizontally across nodes until the target key is located or surpassed.
+        If further progress is blocked at a level, the algorithm drops down to the next level and continues the traversal.
+
+    Insertion Operation:
+        A new node’s levels are determined probabilistically using the promotion probability.
+        The skip list is traversed to identify the appropriate positions at each level, and the next pointers of the preceding nodes are updated to include the new node.
+
+    Deletion Operation:
+        The deletion algorithm traverses the skip list to locate the target node.
+        It updates the next pointers of the preceding nodes at each level to bypass the node, effectively removing it from the structure.
+
+Probabilistic Level Assignment:
+
+    The probability factor ensures that higher levels contain fewer nodes, balancing the skip list’s height and minimizing search path lengths.
+
+--------------------------------------------------------
+LOCK-FREE SKIPLIST
+--------------------------------------------------------
+The lock-free skip list is a concurrent data structure designed to enable efficient operations without traditional locks, allowing multiple threads to perform search, insertion, and deletion simultaneously. This is achieved using atomic operations, memory management, and retry mechanisms to ensure safety and progress in multi-threaded environments.
+
+Key Implementation Concepts:
+
+Node Structure:
+
+    Nodes span multiple levels with an array of pointers (next) for different layers, facilitating quick traversal.
+
+    Dynamic memory allocation is used for flexibility, with atomic initialization for concurrency.
+
+Atomic Operations:
+
+    Compare-And-Swap (CAS) ensures that pointer updates are thread-safe. Contention is resolved with retries.
+
+    Atomic load and store operations prevent inconsistent memory views during concurrent access.
+
+Operations:
+
+    Search: Starts at the highest level, moving horizontally and then downward as needed, with atomic loads ensuring safe traversal.
+
+    Insertion: Levels for new nodes are probabilistically assigned. CAS operations update pointers, with retries handling contention.
+
+    Deletion: Nodes are logically deleted by marking them, followed by physical removal via CAS to update surrounding pointers safely.
+
+Concurrency Techniques:
+
+    Backoff and Retry: Threads retry operations during contention, avoiding blocking others.
+
+    Relaxed Memory Ordering: Optimizes performance while ensuring correctness for critical updates.
+
+Progress Guarantees: Ensures at least one thread progresses, preventing deadlocks or starvation.
+-------------------------------------------------------------------------------------------------

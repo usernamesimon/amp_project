@@ -42,7 +42,7 @@
       "name": "Run lock_free_skiplist_benchmark",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/lock_free_skiplist_benchmark",
+      "program": "${workspaceFolder}/build/lock_free_skiplist_benchmark",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

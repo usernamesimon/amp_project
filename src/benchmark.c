@@ -1,6 +1,8 @@
 #include "../inc/common.h"
 #include "../inc/seq_skiplist.h"
 #include "../inc/coarse_skiplist.h"
+#include "../inc/lock_free_skiplist.h"
+
 
 #include <unistd.h>
 #include <time.h>
@@ -235,6 +237,8 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
     return result;
 }
 
+
+
 void *skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, implementation imp)
 {
     switch (imp)
@@ -242,6 +246,14 @@ void *skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, implementa
     case COARSE:
         return (void *)coarse_skiplist_init(levels, prob, keyrange);
         break;
+
+    case LOCK_FREE:
+        return (void *)lock_free_skiplist_init(levels, prob);
+        break;
+    
+    
+    return (void *)coarse_skiplist_init(levels, prob, keyrange);
+    break;
 
     default:
         return NULL;

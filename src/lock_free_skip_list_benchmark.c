@@ -53,38 +53,43 @@ struct thread_data {
     pthread_mutex_t* result_lock;
 };
 
+
 void* benchmark_thread(void* arg) {
     struct thread_data* data = (struct thread_data*)arg;
     int range = data->key_max - data->key_min + 1;
     clock_t start_time = clock();
     clock_t end_time = start_time + data->time_interval * CLOCKS_PER_SEC;
+    
+    
 
     while (clock() < end_time) {
         struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
         node->key = data->key_min + (rand() % range);
         node->value = rand() % 1000;
-        skiplist_init_node(&node->snode);
+        lock_free_skiplist_init_node(&node->snode);
+
+        
 
         double operation = (double)rand() / RAND_MAX;
         pthread_mutex_lock(data->result_lock);
         if (operation < data->insert_p) {
-            if (skiplist_insert(data->list, &node->snode) == 0) {
+            if (lock_free_skiplist_insert(data->list, &node->snode) == 0) {
                 data->result->successful_adds++;
             } else {
                 data->result->failed_adds++;
                 free(node);
             }
         } else if (operation < data->insert_p + data->contain_p) {
-            skiplist_node* found = skiplist_find(data->list, &node->snode);
+            skiplist_node* found = lock_free_skiplist_find(data->list, &node->snode);
             if (found) {
                 data->result->successful_contains++;
-                skiplist_release_node(found);
+                lock_free_skiplist_release_node(found);
             } else {
                 data->result->failed_contains++;
             }
             free(node);
         } else {
-            if (skiplist_erase(data->list, &node->snode) == 0) {
+            if (lock_free_skiplist_erase(data->list, &node->snode) == 0) {
                 data->result->successful_removes++;
             } else {
                 data->result->failed_removes++;
@@ -99,20 +104,21 @@ void* benchmark_thread(void* arg) {
 
 struct bench_result benchmark(skiplist_raw* list, uint16_t time_interval, uint16_t n_prefill,
                                float insert_p, float delete_p, float contain_p,
-                               int key_min, int key_max, uint8_t levels, double prob, int strategy, int num_threads) {
+                               int key_min, int key_max, uint8_t levels, double prob, int strategy, int num_threads,unsigned int r_seed) {
     struct bench_result result = {0};
     pthread_t threads[num_threads];
     struct thread_data thread_args[num_threads];
     pthread_mutex_t result_lock;
     pthread_mutex_init(&result_lock, NULL);
-
+    struct drand48_data *random_state = (struct drand48_data *)malloc(6);
+    srand48_r(r_seed + 1, random_state);
     // Prefill skiplist
     for (int i = 0; i < n_prefill; i++) {
         struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
         node->key = key_min + (i % (key_max - key_min + 1));
         node->value = rand() % 1000;
-        skiplist_init_node(&node->snode);
-        skiplist_insert(list, &node->snode);
+        lock_free_skiplist_init_node(&node->snode);
+        lock_free_skiplist_insert(list, &node->snode, random_state);
     }
 
     // Launch threads
@@ -164,10 +170,11 @@ int main(int argc, char const* argv[]) {
     }
 
     skiplist_raw list;
-    skiplist_init(&list, my_cmp);
+    unsigned int r_seed;
+    lock_free_skiplist_init(&list, prob, my_cmp);
 
     struct bench_result result = benchmark(&list, time_interval, n_prefill, insert_p, delete_p, contain_p,
-                                           key_min, key_max, levels, prob, strategy, num_threads);
+                                           key_min, key_max, levels, prob, strategy, num_threads, r_seed);
 
     printf("Benchmark Results:\n");
     printf("  Time: %.2f seconds\n", result.time);
@@ -178,6 +185,6 @@ int main(int argc, char const* argv[]) {
     printf("  Successful Removes: %d\n", result.successful_removes);
     printf("  Failed Removes: %d\n", result.failed_removes);
 
-    skiplist_destroy(&list);
+    lock_free_skiplist_destroy(&list);
     return 0;
 }
