@@ -10,7 +10,7 @@ BUILD_DIR = build
 DATA_DIR = data
 INCLUDES = inc
 
-SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c lock_free_skiplist.c
+SOURCES = benchmark.c seq_skiplist.c coarse_skiplist.c fine_skiplist.c lock_free_skiplist.c
 NAME = $(SOURCES:%.c=%)
 OBJECTS= $(SOURCES:%.c=%.o)
 D_OBJECTS = $(SOURCES:%.c=%_debug.o)
@@ -69,13 +69,37 @@ coarse_skiplist_debug.o: $(SRC_DIR)/coarse_skiplist.c
 # 	@echo "Linking $@"
 # 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
-coarse_skiplist.so: coarse_skiplist.o
+fine_skiplist.so: fine_skiplist.o
 	@echo "Linking $@"
 	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
 
-lock_free_skiplist.o: $(SRC_DIR)/coarse_skiplist.c
+fine_skiplist.o: $(SRC_DIR)/fine_skiplist.c
 	@echo "Compiling $<"
 	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+fine_skiplist_debug.o: $(SRC_DIR)/fine_skiplist.c
+	@echo "Compiling $<"
+	$(CC) -fopenmp -Wall -Wextra -g -DDEBUG -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+# fine_skiplist: fine_skiplist.o
+# 	@echo "Linking $@"
+# 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
+
+lock_free_skiplist.so: lock_free_skiplist.o
+	@echo "Linking $@"
+	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^ 
+
+lock_free_skiplist.o: $(SRC_DIR)/lock_free_skiplist.c
+	@echo "Compiling $<"
+	$(CC) $(CFLAGS) -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+lock_free_skiplist_debug.o: $(SRC_DIR)/lock_free_skiplist.c
+	@echo "Compiling $<"
+	$(CC) -fopenmp -Wall -Wextra -g -DDEBUG -fPIC -I$(INCLUDES) -c $< -o $(BUILD_DIR)/$@
+
+# lock_free_skiplist: lock_free_skiplist.o
+# 	@echo "Linking $@"
+# 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
 bench:
 	@echo "This could run a sophisticated benchmark"

@@ -48,13 +48,14 @@ fine_list* fine_skiplist_init(uint8_t levels, double prob, keyrange_t keyrange) 
     skiplist->keyrange.max = keyrange.max;
 
     /* Create head node */
-    skiplist->head = create_node(skiplist, keyrange.min);
-    if(!skiplist->head) {
+    skiplist->head = create_node(skiplist, keyrange.min - 1);
+    fine_node* tail = create_node(skiplist, keyrange.max + 1);
+    if(!skiplist->head||!tail) {
         free(skiplist);
         return NULL;
     }
     for (size_t i = 0; i < skiplist->levels; i++) {
-        skiplist->head->next[i] = NULL;
+        skiplist->head->next[i] = tail;
     }
 
     return skiplist;
@@ -115,13 +116,12 @@ bool fine_skiplist_add(fine_list* list, int key, void* data, unsigned short int 
     fine_node** succs = (fine_node**)malloc(sizeof(fine_node*) * list->levels);
     if (!succs) { free(preds); return false;}
 
-    uint8_t linking_levels = 1;
+    int highest_link;
     /* Cast die until it decides against more levels */
-    for (size_t i = 1; i < list->levels; i++) {
+    for (highest_link = 0; highest_link < list->levels - 1; highest_link++) {
         double die;
         drand48_r((struct drand48_data*)random_state, &die);
         if (die > list->prob) break;
-        linking_levels++;
     }
 
     while(true) {
@@ -144,7 +144,7 @@ bool fine_skiplist_add(fine_list* list, int key, void* data, unsigned short int 
         fine_node *pred, *succ;
         bool valid = true;
 
-        for (size_t l = 0; valid && (l <= linking_levels); l++)
+        for (int l = 0; valid && (l <= highest_link); l++)
         {
             pred = preds[l];
             succ = succs[l];
@@ -154,7 +154,7 @@ bool fine_skiplist_add(fine_list* list, int key, void* data, unsigned short int 
         }
         /* failed, retry */
         if (!valid) {
-            for (size_t l = 0; l < highlock; l++)
+            for (int l = 0; l <= highlock; l++)
             {
                 omp_unset_nest_lock(preds[l]->lock);
             }  
@@ -163,15 +163,15 @@ bool fine_skiplist_add(fine_list* list, int key, void* data, unsigned short int 
         /* Create new node */
         fine_node* new_node = create_node(list, key);
         new_node->data = data;
-        new_node->k = linking_levels;
+        new_node->k = highest_link;
 
         /* Link up to pre-computed level */
-        for (uint8_t i = 0; i < linking_levels; i++) {
+        for (int i = 0; i <= highest_link; i++) {
             new_node->next[i] = succs[i];
             preds[i]->next[i] = new_node;
         }
         new_node->fully_linked = true;
-        for (size_t l = 0; l < highlock; l++)
+        for (int l = 0; l <= highlock; l++)
         {
             omp_unset_nest_lock(preds[l]->lock);
         }
@@ -213,9 +213,9 @@ bool fine_skiplist_remove(fine_list* list, int key, void** data_out) {
                 marked = true;
             } 
             int highlock = -1;
-            fine_node *pred, *succ;
+            fine_node *pred;
             bool valid = true;
-            for (size_t l = 0; valid&&(l<=k); l++)
+            for (int l = 0; valid&&(l<=k); l++)
             {
                 pred = preds[l];
                 omp_set_nest_lock(pred->lock);
@@ -224,20 +224,20 @@ bool fine_skiplist_remove(fine_list* list, int key, void** data_out) {
             }
             /* failed, retry */
             if (!valid) {
-                for (size_t l = 0; l < highlock; l++)
+                for (int l = 0; l <= highlock; l++)
                 {
                     omp_unset_nest_lock(preds[l]->lock);
                 }  
                 continue;
             }
             /* unlink */
-            for (size_t l = k; l >= 0; l--)
+            for (int l = k; l >= 0; l--)
             {
                 preds[l]->next[l] = victim->next[l];
             }
             /* unlock */
             omp_unset_nest_lock(victim->lock);
-            for (size_t l = 0; l < highlock; l++)
+            for (int l = 0; l <= highlock; l++)
             {
                 omp_unset_nest_lock(preds[l]->lock);
             }
@@ -260,10 +260,10 @@ int main(int argc, char const *argv[])
     fine_list* list = fine_skiplist_init(4, 0.5, keyrange);
 
     unsigned short int *random_state = (unsigned short int*)malloc(6);
-    if (!random_state) return NULL;
+    if (!random_state) return -1;
     srand48_r(1430, (struct drand48_data *)random_state);
 
-    fine_skiplist_add(list, keyrange.min + 1, NULL, (struct drand48_data *)random_state);
+    fine_skiplist_add(list, keyrange.min + 1, NULL, random_state);
 
     return 0;
 }

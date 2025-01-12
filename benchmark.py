@@ -90,7 +90,7 @@ class Benchmark:
         self.data.clear()
         print()
     
-        for impl in [cImplementation.COARSE, cImplementation.LOCK_FREE]:
+        for impl in [cImplementation.COARSE, cImplementation.FINE, cImplementation.LOCK_FREE]:
             print(f"{impl.name}", end=" ", flush=True)
             for x in self.threads:
                 tmp.clear()
@@ -147,7 +147,7 @@ class Benchmark:
                              zip(s_adds, f_adds, s_removes, f_removes, s_contains, f_contains)]
                 avg_total_ops = sum(total_ops)/len(total_ops)
 
-                avg_throughput = sum(total_ops)/sum(times)
+                avg_throughput = avg_total_ops/avg_time
                 
                 datafile.write(f"{x} {avg_s_adds} {avg_f_adds} {avg_s_contains} "
                                f"{avg_f_contains} {avg_s_removes} {avg_f_removes} "
@@ -171,7 +171,7 @@ def benchmark():
 
     # The number of threads. This is the x-axis in the benchmark, i.e., the
     # parameter that is 'sweeped' over.
-    num_threads = [1,2,4,8,10,20,64]#,128,256]
+    num_threads = [1,2,4,8,10,20,40,64]#,128,256]
     repetitions = 2
 
     time = ctypes.c_uint16(1)

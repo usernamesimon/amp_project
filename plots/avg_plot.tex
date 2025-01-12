@@ -6,7 +6,7 @@
 \begin{document}
   \begin{tikzpicture}
     \begin{axis}[title={Total throughput},              % Title of the graph
-                 xtick={1,2,4,8,16,32,64},  % The ticks on the x-axis
+                 xtick={1,2,4,8,16,32,40,64},  % The ticks on the x-axis
                  xlabel={number of threads},        % Label of the x-axis
                  ylabel={total ops / [s]},             % Label of the y-axis
                  legend style={
@@ -19,11 +19,14 @@
       \addplot table [y=throughput]{\DATAPATH/small-bench/COARSE.data};
       \addlegendentry{COARSE}
 
+      \addplot table [y=throughput]{\DATAPATH/small-bench/FINE.data};
+      \addlegendentry{FINE}
+
+      \addplot table [y=throughput]{\DATAPATH/small-bench/LOCK_FREE.data};
+      \addlegendentry{LOCK-FREE}
+
       \addplot table [y=throughput]{\DATAPATH/small-bench/SEQUENTIAL.data};
       \addlegendentry{SEQUENTIAL}
-
-      %\addplot table {\DATAPATH/avg/smallbench_100.data};
-      %\addlegendentry{30 lends}
 
     \end{axis}
   \end{tikzpicture}

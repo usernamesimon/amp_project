@@ -1,6 +1,7 @@
 #include "../inc/common.h"
 #include "../inc/seq_skiplist.h"
 #include "../inc/coarse_skiplist.h"
+#include "../inc/fine_skiplist.h"
 #include "../inc/lock_free_skiplist.h"
 
 
@@ -49,6 +50,31 @@ struct bench_result *seq_skiplist_benchmark(uint16_t time_interval, uint16_t n_p
 struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t time_interval, uint16_t n_prefill,
                                                  operations_mix_t operations_mix, selection_strategy strat, key_overlap overlap,
                                                  unsigned int r_seed, keyrange_t keyrange, uint8_t levels, double prob, implementation imp);
+
+/* Definitions for lock free skiplist */
+// Define a node that contains key and value pair.
+struct my_node {
+    // Metadata for skiplist node.
+    skiplist_node snode;
+    // My data here: {int, int} pair.
+    int key;
+    void* value;
+};
+
+// Define a comparison function for `my_node`.
+static int my_cmp(skiplist_node* a, skiplist_node* b, void* aux) {
+    // Get `my_node` from skiplist node `a` and `b`.
+    struct my_node *aa, *bb;
+    aa = _get_entry(a, struct my_node, snode);
+    bb = _get_entry(b, struct my_node, snode);
+
+    // aa  < bb: return neg
+    // aa == bb: return 0
+    // aa  > bb: return pos
+    if (aa->key < bb->key) return -1;
+    if (aa->key > bb->key) return 1;
+    return 0;
+}
 
 unique_keyarray_t *unique_keys_init(int max)
 {
@@ -247,13 +273,12 @@ void *skiplist_init(uint8_t levels, double prob, keyrange_t keyrange, implementa
         return (void *)coarse_skiplist_init(levels, prob, keyrange);
         break;
 
+    case FINE:
+        return (void *)fine_skiplist_init(levels, prob, keyrange);
+
     case LOCK_FREE:
-        return (void *)lock_free_skiplist_init(levels, prob);
+        return (void *)lock_free_skiplist_init(levels, prob, my_cmp);
         break;
-    
-    
-    return (void *)coarse_skiplist_init(levels, prob, keyrange);
-    break;
 
     default:
         return NULL;
@@ -268,18 +293,55 @@ bool skiplist_add(void *skiplist, int key, void *data, implementation imp, unsig
         return coarse_skiplist_add((coarse_list *)skiplist, key, data, r_state);
         break;
 
+    case FINE:
+        return fine_skiplist_add((fine_list*)skiplist, key, data, r_state);
+        break;
+
+    case LOCK_FREE:
+        ;
+        struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
+        node->key = key;
+        node->value = data;
+        lock_free_skiplist_init_node(&node->snode);
+        int result = lock_free_skiplist_insert((skiplist_raw*)skiplist, node, r_state);
+        if (result < 0) {
+            free(node);
+            return false;
+        } else return true;
+        break;
+
     default:
         return false;
         break;
     }
 }
-void *skiplist_contains(void *skiplist, int key, implementation imp)
+bool skiplist_contains(void *skiplist, int key, implementation imp)
 {
     switch (imp)
     {
     case COARSE:
-        return coarse_skiplist_contains((coarse_list *)skiplist, key);
+        return coarse_skiplist_contains((coarse_list *)skiplist, key) != NULL;
         break;
+
+    case FINE:
+        return fine_skiplist_contains((fine_list*)skiplist, key) != NULL;
+        break;
+
+    case LOCK_FREE:
+        ;
+        struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
+        node->key = key;
+        lock_free_skiplist_init_node(&node->snode);
+        skiplist_raw* found = lock_free_skiplist_find((skiplist_raw*)skiplist, node);
+        bool result = false;
+        if (found != NULL) {
+            result = true;
+            lock_free_skiplist_release_node(found);
+        }
+        free(node);
+        return result;
+        break;
+
 
     default:
         return NULL;
@@ -294,6 +356,20 @@ bool skiplist_remove(void *skiplist, int key, implementation imp)
         return coarse_skiplist_remove((coarse_list *)skiplist, key, NULL);
         break;
 
+    case FINE:
+        return fine_skiplist_remove((fine_list*)skiplist, key, NULL);
+        break;
+
+    case LOCK_FREE:
+        ;
+        struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
+        node->key = key;
+        lock_free_skiplist_init_node(&node->snode);
+        bool result = (lock_free_skiplist_erase((skiplist_raw*)skiplist, &node->snode) == 0);
+        free(node);
+        return result;
+        break;
+
     default:
         return false;
         break;
@@ -306,6 +382,13 @@ void skiplist_destroy(void *skiplist, implementation imp)
     case COARSE:
         coarse_skiplist_destroy((coarse_list *)skiplist);
         break;
+
+    case FINE:
+        fine_skiplist_destroy((fine_list*)skiplist);
+        break;
+
+    case LOCK_FREE:
+        lock_free_skiplist_destroy((skiplist_raw*)skiplist);
 
     default:
         break;
@@ -396,7 +479,7 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
     private(die)                      \
     reduction(+ : successfull_adds, failed_adds, successfull_contains, failed_contains) \
     reduction(+: successfull_removes, failed_removes) \
-    reduction(+: thread_time_ns)
+    reduction(max: thread_time_ns)
     {
         int thread_num = omp_get_thread_num();
         /* initialize random state for thread */
@@ -460,7 +543,7 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
             else if (die < operations_mix.insert_p + operations_mix.contain_p)
             {
                 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
-                res = skiplist_contains(skiplist, key, imp) != NULL;
+                res = skiplist_contains(skiplist, key, imp);
                 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
                 thread_time_ns += time_diff(&start, &end);
                 successfull_contains += res;
@@ -506,7 +589,7 @@ int main(void)
     double prob = 0.5;
     selection_strategy strat = UNIQUE;
     key_overlap overlap = COMMON;
-    implementation imp = COARSE;
+    implementation imp = FINE;
 
     struct bench_result* result = parallel_skiplist_benchmark(num_threads, time_interval, n_prefill, operations_mix,
         strat, overlap, 12345, keyrange, levels, prob, imp);
@@ -520,7 +603,7 @@ int main(void)
                       result->counters.successfull_contains + result->counters.failed_contains +
                       result->counters.successfull_removes + result->counters.failed_removes;
 
-    printf("Average Time Per Experiment: %.2f seconds\n", result->cpu_time);
+    printf("Total CPU time: %.2f seconds\n", result->cpu_time);
     printf("Total Operations: %.0f\n", total_ops);
     printf("Insertions: %d successful / %d attempted\n",
         result->counters.successfull_adds, result->counters.successfull_adds + result->counters.failed_adds);
