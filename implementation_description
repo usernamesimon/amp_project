@@ -34,35 +34,9 @@ Probabilistic Level Assignment:
 --------------------------------------------------------
 LOCK-FREE SKIPLIST
 --------------------------------------------------------
-The lock-free skip list is a concurrent data structure designed to enable efficient operations without traditional locks, allowing multiple threads to perform search, insertion, and deletion simultaneously. This is achieved using atomic operations, memory management, and retry mechanisms to ensure safety and progress in multi-threaded environments.
-
-Key Implementation Concepts:
-
-Node Structure:
-
-    Nodes span multiple levels with an array of pointers (next) for different layers, facilitating quick traversal.
-
-    Dynamic memory allocation is used for flexibility, with atomic initialization for concurrency.
-
-Atomic Operations:
-
-    Compare-And-Swap (CAS) ensures that pointer updates are thread-safe. Contention is resolved with retries.
-
-    Atomic load and store operations prevent inconsistent memory views during concurrent access.
-
-Operations:
-
-    Search: Starts at the highest level, moving horizontally and then downward as needed, with atomic loads ensuring safe traversal.
-
-    Insertion: Levels for new nodes are probabilistically assigned. CAS operations update pointers, with retries handling contention.
-
-    Deletion: Nodes are logically deleted by marking them, followed by physical removal via CAS to update surrounding pointers safely.
-
-Concurrency Techniques:
-
-    Backoff and Retry: Threads retry operations during contention, avoiding blocking others.
-
-    Relaxed Memory Ordering: Optimizes performance while ensuring correctness for critical updates.
-
-Progress Guarantees: Ensures at least one thread progresses, preventing deadlocks or starvation.
--------------------------------------------------------------------------------------------------
+Skip list implementation design
+At the heart of this implementation lies the extensive use of atomic operations, thread coordination strategies, and a carefully crafted design that ensures progress and consistency.
+Atomic operations are the cornerstone of the lock-free skip list, enabling thread-safe updates to shared variables. The __atomic_compare_exchange primitive (CAS) plays a critical role. It allows threads to compare the current value of a variable with an expected value and update it only if the two match, ensuring that updates are atomic and consistent. This mechanism is widely used to modify pointers during operations like insertion or deletion. Alongside CAS, other atomic primitives, such as __atomic_fetch_add and __atomic_fetch_sub, are employed for incrementing or decrementing counters. These operations, combined with atomic load and store functions, ensure that threads can access and update shared variables without race conditions. All these operations are configured with relaxed memory ordering (__ATOMIC_RELAXED), which optimizes performance by reducing synchronization overhead while maintaining the correctness of the data structure.
+Thread coordination in the skip list is achieved through non-blocking mechanisms. The implementation uses sched_yield() to allow a thread to relinquish its execution time when it detects contention, enabling other threads to proceed. This approach minimizes busy-waiting and promotes fairness among threads. When CAS operations fail due to concurrent modifications, the skip list relies on retry logic, where threads reattempt the operation using the updated state of the data structure. This contention-handling strategy ensures that operations eventually succeed without blocking other threads.
+Moreover, each node in the skip list maintains an array of pointers corresponding to its levels. Updates to these pointers are performed level-by-level, limiting the scope of contention and allowing threads to work independently on different parts of the structure.
+In addition, all critical updates to pointers or node states are performed using CAS. In order to handle deletions safely, nodes are first marked as logically deleted before being physically removed. This prevents inconsistencies, as a node being traversed by one thread might simultaneously be targeted for deletion by another. This two-step deletion process, combined with atomic pointer updates, ensures that the structure remains consistent and robust.
