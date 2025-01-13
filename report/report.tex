@@ -205,8 +205,6 @@ The results from the benchmark are visualized in the following plots below:
 
 
 Below are shown comparison results from the benchmark with the subjected skiplist implmentations and various parameter configurations:
-\begin{enumerate}
-    \item 
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters1_1s_per_thread.pdf}
@@ -215,8 +213,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters1_1s_per_thread}
     \end{figure}
 
-
-    \item 
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters1_1s_throughput.pdf}
@@ -224,7 +220,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters1_1s_throughput}
     \end{figure}
 
-    \item 
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters1_5s_per_thread.pdf}
@@ -233,8 +228,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters1_5s_per_thread}
     \end{figure}
 
-
-    \item
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters1_5s_throughput.pdf}
@@ -242,7 +235,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters1_5s_throughput}
     \end{figure}
 
-    \item
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters2_1s_per_thread.pdf}
@@ -251,8 +243,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters2_1s_per_thread}
     \end{figure}
 
-
-    \item 
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters2_1s_throughput.pdf}
@@ -260,7 +250,6 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:larameters1_1s_throughput}
     \end{figure}
 
-    \item
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters2_5s_per_thread.pdf}
@@ -269,18 +258,12 @@ Below are shown comparison results from the benchmark with the subjected skiplis
         \label{fig:parameters2_5s_per_thread}
     \end{figure}
 
-
-    \item
     \begin{figure}[H]
         \centering
         \includegraphics{../plots/parameters2_5s_throughput.pdf}
         \caption{Configuration parameters2 Throughput, 5s execution time}
         \label{fig:arameters2_5s_throughput}
     \end{figure}
-
-
-    
-\end{enumerate}
 
 The comparative plots show how the different implementations perform on the same input parameters. 
 What becomes clear is that the coarse lock implementation does not gain any performance with a higher thread count over a sequential skip list operating on only one thread. 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.10.7)  13 JAN 2025 23:09
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.10.7)  13 JAN 2025 23:29
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -238,8 +238,7 @@ Type  H <return>  for immediate help.
                                                   
 l.7 \begin{document}
                     
-? s
-OK, entering \scrollmode...
+? 
 \AtBeginShipoutBox=\box49
 Package hyperref Info: Link coloring OFF on input line 7.
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
@@ -334,10 +333,10 @@ f>]
 File: ../plots/parameters1_1s_per_thread.pdf Graphic file (type pdf)
 <use ../plots/parameters1_1s_per_thread.pdf>
 Package pdftex.def Info: ../plots/parameters1_1s_per_thread.pdf  used on input 
-line 212.
+line 210.
 (pdftex.def)             Requested size: 351.07375pt x 212.5646pt.
 
-Overfull \hbox (6.07375pt too wide) in paragraph at lines 212--213
+Overfull \hbox (6.07375pt too wide) in paragraph at lines 210--211
  [][] 
  []
 
@@ -345,69 +344,69 @@ Overfull \hbox (6.07375pt too wide) in paragraph at lines 212--213
 File: ../plots/parameters1_1s_throughput.pdf Graphic file (type pdf)
 <use ../plots/parameters1_1s_throughput.pdf>
 Package pdftex.def Info: ../plots/parameters1_1s_throughput.pdf  used on input 
-line 222.
+line 218.
 (pdftex.def)             Requested size: 351.6298pt x 212.5646pt.
 
-Overfull \hbox (6.6298pt too wide) in paragraph at lines 222--223
+Overfull \hbox (6.6298pt too wide) in paragraph at lines 218--219
  [][] 
  []
 
 [13 <../plots/parameters1_1s_per_thread.pdf>]
-<../plots/parameters1_5s_per_thread.pdf, id=238, 341.92743pt x 212.56514pt>
+<../plots/parameters1_5s_per_thread.pdf, id=237, 341.92743pt x 212.56514pt>
 File: ../plots/parameters1_5s_per_thread.pdf Graphic file (type pdf)
 <use ../plots/parameters1_5s_per_thread.pdf>
 Package pdftex.def Info: ../plots/parameters1_5s_per_thread.pdf  used on input 
-line 230.
+line 225.
 (pdftex.def)             Requested size: 341.92657pt x 212.5646pt.
-<../plots/parameters1_5s_throughput.pdf, id=239, 342.48352pt x 212.56514pt>
+<../plots/parameters1_5s_throughput.pdf, id=238, 342.48352pt x 212.56514pt>
 File: ../plots/parameters1_5s_throughput.pdf Graphic file (type pdf)
 <use ../plots/parameters1_5s_throughput.pdf>
 Package pdftex.def Info: ../plots/parameters1_5s_throughput.pdf  used on input 
-line 240.
+line 233.
 (pdftex.def)             Requested size: 342.48268pt x 212.5646pt.
  [14 <../plots/parameters1_1s_throughput.pdf> <../plots/parameters1_5s_per_thre
 ad.pdf>]
-<../plots/parameters2_1s_per_thread.pdf, id=263, 341.92743pt x 212.56514pt>
+<../plots/parameters2_1s_per_thread.pdf, id=260, 341.92743pt x 212.56514pt>
 File: ../plots/parameters2_1s_per_thread.pdf Graphic file (type pdf)
 <use ../plots/parameters2_1s_per_thread.pdf>
 Package pdftex.def Info: ../plots/parameters2_1s_per_thread.pdf  used on input 
-line 248.
+line 240.
 (pdftex.def)             Requested size: 341.92657pt x 212.5646pt.
-<../plots/parameters2_1s_throughput.pdf, id=264, 342.48352pt x 212.56514pt>
+<../plots/parameters2_1s_throughput.pdf, id=261, 342.48352pt x 212.56514pt>
 File: ../plots/parameters2_1s_throughput.pdf Graphic file (type pdf)
 <use ../plots/parameters2_1s_throughput.pdf>
 Package pdftex.def Info: ../plots/parameters2_1s_throughput.pdf  used on input 
-line 258.
+line 248.
 (pdftex.def)             Requested size: 342.48268pt x 212.5646pt.
  [15 <../plots/parameters1_5s_throughput.pdf> <../plots/parameters2_1s_per_thre
 ad.pdf>]
-<../plots/parameters2_5s_per_thread.pdf, id=287, 341.92743pt x 212.56514pt>
+<../plots/parameters2_5s_per_thread.pdf, id=282, 341.92743pt x 212.56514pt>
 File: ../plots/parameters2_5s_per_thread.pdf Graphic file (type pdf)
 <use ../plots/parameters2_5s_per_thread.pdf>
 Package pdftex.def Info: ../plots/parameters2_5s_per_thread.pdf  used on input 
-line 266.
+line 255.
 (pdftex.def)             Requested size: 341.92657pt x 212.5646pt.
-<../plots/parameters2_5s_throughput.pdf, id=288, 342.48352pt x 212.56514pt>
+<../plots/parameters2_5s_throughput.pdf, id=283, 342.48352pt x 212.56514pt>
 File: ../plots/parameters2_5s_throughput.pdf Graphic file (type pdf)
 <use ../plots/parameters2_5s_throughput.pdf>
 Package pdftex.def Info: ../plots/parameters2_5s_throughput.pdf  used on input 
-line 276.
+line 263.
 (pdftex.def)             Requested size: 342.48268pt x 212.5646pt.
  [16 <../plots/parameters2_1s_throughput.pdf> <../plots/parameters2_5s_per_thre
 ad.pdf>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 290.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 273.
  [17 <../plots/parameters2_5s_throughput.pdf>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 290.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 273.
  (./report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 290.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 290.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 273.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 273.
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 80422A735FB0C58AF66278BCABE2EE96;650.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 290.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 273.
  ) 
 Here is how much of TeX's memory you used:
- 7105 strings out of 483183
- 123554 string characters out of 5966292
+ 7097 strings out of 483183
+ 123498 string characters out of 5966292
  367768 words of memory out of 5000000
  21951 multiletter control sequences out of 15000+600000
  536761 words of font info for 39 fonts, out of 8000000 for 9000
@@ -423,10 +422,10 @@ type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
 ublic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
 /cm/cmtt10.pfb>
-Output written on report.pdf (17 pages, 205139 bytes).
+Output written on report.pdf (17 pages, 204924 bytes).
 PDF statistics:
- 368 PDF objects out of 1000 (max. 8388607)
- 320 compressed objects within 4 object streams
- 75 named destinations out of 1000 (max. 500000)
+ 358 PDF objects out of 1000 (max. 8388607)
+ 310 compressed objects within 4 object streams
+ 67 named destinations out of 1000 (max. 500000)
  156 words of extra memory for PDF output out of 10000 (max. 10000000)
 
