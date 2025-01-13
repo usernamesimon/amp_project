@@ -1,40 +1,14 @@
 
 --------------------------------
-Sequential skiplist
+SEQUENTIAL SKIPLIST IMPLEMENTATION DESIGN
 --------------------------------
-Sequential Skip List Implementation
-
-The sequential skip list is a probabilistic data structure designed for efficient single-threaded operations, offering logarithmic average time complexity for search, insertion, and deletion. It organizes elements hierarchically across multiple levels, where higher levels provide shortcuts to nodes in the lower levels, reducing traversal time.
-Key Features:
-
-    Node Structure:
-        Each node contains a key and an array of pointers (next), one for each level the node spans.
-        A special head node, initialized with pointers for all levels set to NULL, acts as the starting point.
-
-    Initialization:
-        The skip list is configured with a fixed number of levels and a promotion probability (prob), which determines the likelihood of a node being promoted to higher levels.
-        A random seed ensures consistent behavior for level assignment during debugging or repeated runs.
-
-    Search Operation:
-        The search starts at the topmost level of the head node and moves horizontally across nodes until the target key is located or surpassed.
-        If further progress is blocked at a level, the algorithm drops down to the next level and continues the traversal.
-
-    Insertion Operation:
-        A new node’s levels are determined probabilistically using the promotion probability.
-        The skip list is traversed to identify the appropriate positions at each level, and the next pointers of the preceding nodes are updated to include the new node.
-
-    Deletion Operation:
-        The deletion algorithm traverses the skip list to locate the target node.
-        It updates the next pointers of the preceding nodes at each level to bypass the node, effectively removing it from the structure.
-
-Probabilistic Level Assignment:
-
-    The probability factor ensures that higher levels contain fewer nodes, balancing the skip list’s height and minimizing search path lengths.
+The node structure in the skip list is designed to enable efficient traversal and operations within an ordered list. Each node consists of a key, which serves as the value or identifier for ordering and searching, and a dynamically allocated array of pointers. These pointers connect to subsequent nodes at different levels, allowing the skip list to skip over sections of the list and perform operations more quickly.
+The skip list’s implementation revolves around the principles of multi-level linking and probabilistic balancing. Nodes are connected at various levels, with higher levels acting as shortcuts for fast traversal. The height of a node, which determines the number of levels it participates in, is assigned probabilistically using a random number generator. The implementation relies on the drand48 family of functions for this purpose, ensuring that node heights are distributed according to the specified probability factor. To maintain consistent and reproducible behavior, a random_state structure is used to manage the state of the random number generator. During initialization, the srand48_r function is called with a user-specified seed to set up this random state, and the drand48_r function is subsequently used to generate random numbers during operations such as node height determination.
+Core operations in the skip list include search, insertion, and deletion. Searches begin at the highest level of the list and proceed downward, skipping over unnecessary nodes to quickly locate the desired key. Insertions involve creating a new node with a height determined probabilistically using drand48_r, then linking the node at the appropriate levels while preserving the structure of the list. Deletions are handled by unlinking nodes from all levels they participate in, ensuring that the skip list remains consistent and orderly.
 
 --------------------------------------------------------
-LOCK-FREE SKIPLIST
+LOCK-FREE SKIPLIST IMPLEMENTATION DESIGN
 --------------------------------------------------------
-Skip list implementation design
 At the heart of this implementation lies the extensive use of atomic operations, thread coordination strategies, and a carefully crafted design that ensures progress and consistency.
 Atomic operations are the cornerstone of the lock-free skip list, enabling thread-safe updates to shared variables. The __atomic_compare_exchange primitive (CAS) plays a critical role. It allows threads to compare the current value of a variable with an expected value and update it only if the two match, ensuring that updates are atomic and consistent. This mechanism is widely used to modify pointers during operations like insertion or deletion. Alongside CAS, other atomic primitives, such as __atomic_fetch_add and __atomic_fetch_sub, are employed for incrementing or decrementing counters. These operations, combined with atomic load and store functions, ensure that threads can access and update shared variables without race conditions. All these operations are configured with relaxed memory ordering (__ATOMIC_RELAXED), which optimizes performance by reducing synchronization overhead while maintaining the correctness of the data structure.
 Thread coordination in the skip list is achieved through non-blocking mechanisms. The implementation uses sched_yield() to allow a thread to relinquish its execution time when it detects contention, enabling other threads to proceed. This approach minimizes busy-waiting and promotes fairness among threads. When CAS operations fail due to concurrent modifications, the skip list relies on retry logic, where threads reattempt the operation using the updated state of the data structure. This contention-handling strategy ensures that operations eventually succeed without blocking other threads.
