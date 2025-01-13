@@ -117,6 +117,7 @@ small-plot:
 
 plot: 
 	@echo "Plotting bench results ..."
+	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{sequential_throughput.tex}"'
 	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{parameters1_1s_throughput.tex}"'
 	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{parameters1_1s_per_thread.tex}"'
 	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{parameters2_1s_throughput.tex}"'

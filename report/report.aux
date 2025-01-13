@@ -1,5 +1,60 @@
 \relax 
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces A sample plot showcasing the runtime of a distributed library under increasing number of threads. Clearly, it does not scale very well.}}{1}\protected@file@percent }
-\newlabel{fig:example_plot}{{1}{1}}
-\newlabel{fig:example_plot@cref}{{[figure][1][]1}{[1][1][]1}}
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Benchmark}{2}{section.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces parameter table}}{3}{table.1}\protected@file@percent }
+\newlabel{tab:parameters}{{1}{3}{parameter table}{table.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Sequential skip list}{4}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Sequential skiplist benchmark results}{4}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Performance of sequential implementation under different parameters}}{5}{figure.1}\protected@file@percent }
+\newlabel{fig:sequential_plot}{{1}{5}{Performance of sequential implementation under different parameters}{figure.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Coarse skiplist}{6}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Coarse skiplist benchmark results}{6}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  The results demonstrate higher throughput for parameters1 configuration due to reduced contention, while both workloads plateau at higher thread counts, reflecting the scalability limitations of coarse-grained locking.}}{6}{figure.2}\protected@file@percent }
+\newlabel{fig:coarse_skiplist_throughput}{{2}{6}{The results demonstrate higher throughput for parameters1 configuration due to reduced contention, while both workloads plateau at higher thread counts, reflecting the scalability limitations of coarse-grained locking}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces The plot highlights the impact of workload composition and lock contention on per-thread performance as thread count increases.}}{7}{figure.3}\protected@file@percent }
+\newlabel{fig:coarse_ops_per_thread}{{3}{7}{The plot highlights the impact of workload composition and lock contention on per-thread performance as thread count increases}{figure.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Lazy skip list}{8}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Lazy skip list benchmark results}{8}{subsection.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Throughput measurements for the lazy skip list}}{8}{figure.4}\protected@file@percent }
+\newlabel{fig:fine_skiplist_throughput}{{4}{8}{Throughput measurements for the lazy skip list}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces  Total operations per thread for the lazy skip}}{9}{figure.5}\protected@file@percent }
+\newlabel{fig:fine_skiplist_per_thread}{{5}{9}{Total operations per thread for the lazy skip}{figure.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Lock-free skip list}{10}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Lock-free skiplist benchmark results}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The graph demonstrates scalability with increasing thread count and highlights the impact of parameter tuning on system performance.}}{11}{figure.6}\protected@file@percent }
+\newlabel{fig:lock_free_throughput}{{6}{11}{The graph demonstrates scalability with increasing thread count and highlights the impact of parameter tuning on system performance}{figure.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces The plot highlights the effects of workload composition and thread contention on per-thread performance as the thread count increases.}}{12}{figure.7}\protected@file@percent }
+\newlabel{fig:lock_free_ops_per_thread}{{7}{12}{The plot highlights the effects of workload composition and thread contention on per-thread performance as the thread count increases}{figure.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Benchmark results comparison}{13}{section.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Configuration parameters1 TOPS per thread,1s execution time}}{13}{figure.8}\protected@file@percent }
+\newlabel{fig:parameters1_1s_per_thread}{{8}{13}{Configuration parameters1 TOPS per thread,1s execution time}{figure.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Configuration parameters1 Throughput, 1s execution time}}{14}{figure.9}\protected@file@percent }
+\newlabel{fig:parameters1_1s_throughput}{{9}{14}{Configuration parameters1 Throughput, 1s execution time}{figure.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Configuration parameters1 TOPS per thread,5s execution time}}{14}{figure.10}\protected@file@percent }
+\newlabel{fig:parameters1_5s_per_thread}{{10}{14}{Configuration parameters1 TOPS per thread,5s execution time}{figure.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Configuration parameters1 Throughput, 5s execution time}}{15}{figure.11}\protected@file@percent }
+\newlabel{fig:parameters1_5s_throughput}{{11}{15}{Configuration parameters1 Throughput, 5s execution time}{figure.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Configuration parameters2 TOPS per thread,1s execution time}}{15}{figure.12}\protected@file@percent }
+\newlabel{fig:parameters2_1s_per_thread}{{12}{15}{Configuration parameters2 TOPS per thread,1s execution time}{figure.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Configuration parameters2 Throughput, 1s execution time.}}{16}{figure.13}\protected@file@percent }
+\newlabel{fig:larameters1_1s_throughput}{{13}{16}{Configuration parameters2 Throughput, 1s execution time}{figure.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Configuration parameters2 TOPS per thread,5s execution time}}{16}{figure.14}\protected@file@percent }
+\newlabel{fig:parameters2_5s_per_thread}{{14}{16}{Configuration parameters2 TOPS per thread,5s execution time}{figure.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Configuration parameters2 Throughput, 5s execution time}}{17}{figure.15}\protected@file@percent }
+\newlabel{fig:arameters2_5s_throughput}{{15}{17}{Configuration parameters2 Throughput, 5s execution time}{figure.15}{}}

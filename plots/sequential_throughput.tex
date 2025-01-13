@@ -1,0 +1,50 @@
+\documentclass{standalone}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{statistics}
+
+\begin{document}
+  \begin{tikzpicture}
+    \begin{axis}[ybar,
+                 bar width=0.2cm,
+                 width = 15cm,
+                 title={Sequential skip list},              % Title of the graph
+                 xlabel={parameters},        % Label of the x-axis
+                 ylabel={total ops},             % Label of the y-axis
+                 symbolic x coords = {param1-1s, param1-5s, param2-1s, param2-5s},
+                 xtick=data,
+                 legend style={
+                   at={(1.05,0.95)},                % Position of the legend anchor
+                   anchor=north west,                % The legend anchor
+                   label=below : {coarse locked}
+                 }]
+
+      % Each graph is added via \addplot and a .data file, and
+      % add a legend entry for the previous graph.
+      \addplot[yellow, fill] table [y=throughput]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{throughput}
+
+      \addplot[green, fill] table [y=succesfull-adds]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{succ-adds}
+
+      \addplot[lime, fill] table [y=failed-adds]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{fail-adds}
+
+      \addplot[blue, fill] table [y=succesfull-contains]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{succ-cont}
+
+      \addplot[cyan, fill] table [y=failed-contains]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{fail-cont}
+
+      \addplot[darkgray, fill] table [y=successfull-removes]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{succ-rem}
+
+      \addplot[lightgray, fill] table [y=failed-removes]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{fail-rem}
+
+      \addplot[orange, fill] table [y=total-operations]{\DATAPATH/SEQUENTIAL-COMBINED.data};
+      \addlegendentry{total-opps}
+
+    \end{axis}
+  \end{tikzpicture}
+\end{document}
