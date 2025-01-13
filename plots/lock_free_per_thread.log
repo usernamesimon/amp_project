@@ -2,9 +2,8 @@ This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**\newcommand{\DATAPATH}{../data/submission}\input{parameters1_1s_throughput.te
-x}
- (./parameters1_1s_throughput.tex
+**\newcommand{\DATAPATH}{../data/submission}\input{lock_free_per_thread.tex}
+ (./lock_free_per_thread.tex
 (/usr/share/texlive/texmf-dist/tex/latex/standalone/standalone.cls
 Document Class: standalone 2018/03/26 v1.3a Class to compile TeX sub-files stan
 dalone
@@ -480,8 +479,8 @@ File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count272
 \l__pdf_internal_box=\box58
 )
-(./parameters1_1s_throughput.aux)
-\openout1 = `parameters1_1s_throughput.aux'.
+No file lock_free_per_thread.aux.
+\openout1 = `lock_free_per_thread.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
@@ -497,7 +496,6 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
-
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count273
@@ -527,10 +525,10 @@ ick labels; missing features). Consider writing \pgfplotsset{compat=1.16} into
 your preamble.
  on input line 6.
 
-PGFPlots: reading {../data/submission/parameters1_1s/COARSE.data}
-PGFPlots: reading {../data/submission/parameters1_1s/FINE.data}
 PGFPlots: reading {../data/submission/parameters1_1s/LOCK_FREE.data}
-PGFPlots: reading {../data/submission/parameters1_1s/SEQUENTIAL.data}
+PGFPlots: reading {../data/submission/parameters1_5s/LOCK_FREE.data}
+PGFPlots: reading {../data/submission/parameters2_1s/LOCK_FREE.data}
+PGFPlots: reading {../data/submission/parameters2_5s/LOCK_FREE.data}
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 39.
 LaTeX Font Info:    External font `cmex10' loaded for size
@@ -538,19 +536,19 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-(./parameters1_1s_throughput.aux) ) 
+(./lock_free_per_thread.aux) ) 
 Here is how much of TeX's memory you used:
- 22417 strings out of 483183
- 599034 string characters out of 5966292
- 953133 words of memory out of 5000000
- 37093 multiletter control sequences out of 15000+600000
+ 22457 strings out of 483183
+ 600182 string characters out of 5966292
+ 953113 words of memory out of 5000000
+ 37138 multiletter control sequences out of 15000+600000
  532338 words of font info for 24 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 70i,18n,105p,802b,2205s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/fonts/type1/p
-ublic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/a
-msfonts/cm/cmr7.pfb>
-Output written on parameters1_1s_throughput.pdf (1 page, 29652 bytes).
+ 70i,18n,105p,797b,2205s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfon
+ts/cm/cmr7.pfb>
+Output written on lock_free_per_thread.pdf (1 page, 26933 bytes).
 PDF statistics:
  19 PDF objects out of 1000 (max. 8388607)
  13 compressed objects within 1 object stream

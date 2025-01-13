@@ -1,0 +1,41 @@
+\documentclass{standalone}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{statistics}
+
+\begin{document}
+  \begin{tikzpicture}
+    \begin{loglogaxis}[title={Total operations per thread},              % Title of the graph
+                 xtick={1,2,4,8,10,20,40,64},  % The ticks on the x-axis
+                 xlabel={number of threads},        % Label of the x-axis
+                 ylabel={total ops},             % Label of the y-axis
+                 xticklabel=\pgfmathparse{exp(\tick)}
+                 \pgfmathprintnumber{\pgfmathresult},
+                 scaled x ticks = false,
+                 xticklabel style = {
+                    /pgf/number format/fixed,
+                    /pgf/number format/precision = 0,
+                  },
+                 legend style={
+                   at={(1.05,0.95)},                % Position of the legend anchor
+                   anchor=north west,                % The legend anchor
+                   label=below : {fine locked}
+                 }]
+
+      % Each graph is added via \addplot and a .data file, and
+      % add a legend entry for the previous graph.
+      \addplot table [x=n_threads, y expr = \thisrow{total_operations}/x]{\DATAPATH/parameters1_1s/FINE.data};
+      \addlegendentry{parameters1, 1s}
+
+      \addplot table [x=n_threads, y expr = \thisrow{total_operations}/x]{\DATAPATH/parameters1_5s/FINE.data};
+      \addlegendentry{parameters1, 5s}
+
+      \addplot table [x=n_threads, y expr = \thisrow{total_operations}/x]{\DATAPATH/parameters2_1s/FINE.data};
+      \addlegendentry{parameters2, 1s}
+
+      \addplot table [x=n_threads, y expr = \thisrow{total_operations}/x]{\DATAPATH/parameters2_5s/FINE.data};
+      \addlegendentry{parameters2, 5s}
+
+    \end{loglogaxis}
+  \end{tikzpicture}
+\end{document}
