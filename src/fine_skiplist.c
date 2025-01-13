@@ -175,12 +175,10 @@ bool fine_skiplist_add(fine_list* list, int key, void* data, unsigned short int 
         {
             omp_unset_nest_lock(preds[l]->lock);
         }
-
+        free(preds);
+        free(succs);
+        return true;
     }
-
-    free(preds);
-    free(succs);
-    return true;
 }
 
 bool fine_skiplist_remove(fine_list* list, int key, void** data_out) {

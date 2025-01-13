@@ -1,0 +1,2 @@
+n_threads succesfull_adds failed_adds succesfull_contains failed_contains successfull_removes failed_removes total_operations max_thread_time throughput
+1 23932.333333333332 5645.666666666667 2821.6666666666665 11899.0 5697.0 23521.0 73516.66666666667 0.9651145537694296 76174.03175564395

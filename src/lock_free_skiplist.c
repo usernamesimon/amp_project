@@ -463,7 +463,7 @@ static inline int handle_insertion(skiplist_raw *slist, skiplist_node *node, boo
                 // Duplicate key is not allowed
                 skiplist_reset_flags(prevs, current_level + 1, top_layer);
                 ATOMIC_FETCH_SUB(cur_node->ref_count, 1);
-                return -1;
+                return -2;
             }
 
             if (current_level <= top_layer)
@@ -539,7 +539,7 @@ static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no
     pthread_t tid = pthread_self();
     size_t tid_hash = ((size_t)tid) % 256;
 
-    int top_layer = skiplist_determine_top_layer(slist,(struct drand48_data *)random_state);
+    int top_layer = skiplist_determine_top_layer(slist, random_state);
 
     // Initialize node before insertion
     initialize_node(node, top_layer);
@@ -559,7 +559,7 @@ static inline int skiplist_add(skiplist_raw *slist, skiplist_node *node, bool no
 int lock_free_skiplist_insert(skiplist_raw *slist,
                     skiplist_node *node,unsigned short int random_state[3])
 {
-    return skiplist_add(slist, node, false,random_state);
+    return skiplist_add(slist, node, true, random_state);
 }
 
 /* int skiplist_insert_unique(skiplist_raw *slist,

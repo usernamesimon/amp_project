@@ -57,7 +57,7 @@ class Benchmark:
     parameter xrange using the fixed set of inputs for every point. It simply
     averages the results over the given amount of repetitions.
     '''
-    def __init__(self, start_time, binary, parameters,
+    def __init__(self, binary, parameters,
                  threads, repetitions_per_point, basedir, graph_name):
         self.binary = binary
         self.parameters = parameters
@@ -68,7 +68,7 @@ class Benchmark:
         self.graph_name = graph_name
 
         self.data = {}
-        self.folder = start_time
+        self.now = None
 
     def run(self):
         '''
@@ -76,6 +76,8 @@ class Benchmark:
         repetitions_per_point data points and writes them back to the data
         dictionary to be processed later.
         '''
+        self.now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        print(f"Starting Benchmark run at {self.now}")
 
         tmp = []
         print("SEQUENTIAL", end=" ", flush=True)
@@ -101,20 +103,22 @@ class Benchmark:
             self.data.clear()
             print()
         
+        end_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        print(f"Finished Benchmark run at {end_time}")
 
     def write_avg_data(self, filename):
         '''
         Writes averages for each point measured into a dataset in the data
         folder timestamped when the run was started.
         '''
-        if self.folder is None:
+        if self.now is None:
             raise Exception("Benchmark was not run. Run before writing data.")
 
         try:
-            os.makedirs(f"{self.basedir}/data/{self.folder}/{self.graph_name}")
+            os.makedirs(f"{self.basedir}/data/{self.now}/{self.graph_name}")
         except FileExistsError:
             pass
-        with open(f"{self.basedir}/data/{self.folder}/{self.graph_name}/{filename}.data", "w")\
+        with open(f"{self.basedir}/data/{self.now}/{self.graph_name}/{filename}.data", "w")\
                 as datafile:
             datafile.write(f"n_threads succesfull_adds failed_adds succesfull_contains "
                            "failed_contains successfull_removes failed_removes "
@@ -168,40 +172,35 @@ def benchmark():
     # The number of threads. This is the x-axis in the benchmark, i.e., the
     # parameter that is 'sweeped' over.
     num_threads = [1,2,4,8,10,20,40,64]#,128,256]
-    repetitions = 3
+    repetitions = 1
 
-    time = [ctypes.c_uint16(1), ctypes.c_uint16(5)] 
+    time = ctypes.c_uint16(1)
     prefill = ctypes.c_uint16(10000)
-    op_mix = [cOperationsMix(0.1, 0.8), cOperationsMix(0.4, 0.2)]
-    strat = [cSelectionStrategy(cSelectionStrategy.SUCCESSIVE),
-             cSelectionStrategy(cSelectionStrategy.RANDOM), 
-             cSelectionStrategy(cSelectionStrategy.UNIQUE)]
-    overlap = [cKeyOverlap(cKeyOverlap.COMMON), cKeyOverlap(cKeyOverlap.DISJOINT)]
-    seed = ctypes.c_uint(11776870)
+    op_mix = cOperationsMix(0.1, 0.8)
+    strat = cSelectionStrategy(cSelectionStrategy.RANDOM)
+    overlap = cKeyOverlap(cKeyOverlap.COMMON)
+    seed = ctypes.c_uint(12345)
     keyrange = cKeyrange(0, 100000)
     levels = ctypes.c_uint8(4)
     prob = ctypes.c_double(0.5)
+    impl = [cImplementation(cImplementation.COARSE)]
+
     # Parameters for the benchmark are passed in a tuple, here (1000,). To pass
     # just one parameter, we cannot write (1000) because that would not parse
     # as a tuple, instead python understands a trailing comma as a tuple with
     # just one entry.
+    sequential = Benchmark(benchmark_binary, 
+            (time, prefill, op_mix, strat, seed, keyrange, levels, prob),
+            [1], repetitions, basedir, "sequential")
+    
+    coarse = Benchmark(benchmark_binary,
+            (time, prefill, op_mix, strat, overlap, seed, keyrange, levels, prob),
+            num_threads, repetitions, basedir, "small-bench")
 
-    #para1 = [op_mix[0], strat[1], overlap[0]]
-    para2 = [op_mix[1], strat[2], overlap[1]]
-    paras = {"parameters2": para2}
-
-    start_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-
-    for name, para in paras.items():
-        uut = Benchmark(start_time, benchmark_binary,
-            (time[0], prefill, *para, seed, keyrange, levels, prob),
-            num_threads, repetitions, basedir, f"{name}_1s")
-        uut.run()
-        uut = Benchmark(start_time, benchmark_binary,
-            (time[1], prefill, *para, seed, keyrange, levels, prob),
-            num_threads, repetitions, basedir, f"{name}_5s")
-        uut.run()
-
+    #sequential.run()
+    #sequential.write_avg_data()
+    coarse.run()
+    #coarse.write_avg_data()
     
 
 if __name__ == "__main__":

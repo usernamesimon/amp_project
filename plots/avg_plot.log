@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.10.7)  12 JAN 2025 20:19
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.10.7)  13 JAN 2025 00:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**\newcommand{\DATAPATH}{../data/2025-01-12T20:18:08}\input{avg_plot.tex}
+**\newcommand{\DATAPATH}{../data/2025-01-13T00:32:09}\input{avg_plot.tex}
  (./avg_plot.tex
 (/usr/share/texlive/texmf-dist/tex/latex/standalone/standalone.cls
 Document Class: standalone 2018/03/26 v1.3a Class to compile TeX sub-files stan
@@ -526,10 +526,10 @@ ick labels; missing features). Consider writing \pgfplotsset{compat=1.16} into
 your preamble.
  on input line 6.
 
-PGFPlots: reading {../data/2025-01-12T20:18:08/small-bench/COARSE.data}
-PGFPlots: reading {../data/2025-01-12T20:18:08/small-bench/FINE.data}
-PGFPlots: reading {../data/2025-01-12T20:18:08/small-bench/LOCK_FREE.data}
-PGFPlots: reading {../data/2025-01-12T20:18:08/small-bench/SEQUENTIAL.data}
+PGFPlots: reading {../data/2025-01-13T00:32:09/small-bench/COARSE.data}
+PGFPlots: reading {../data/2025-01-13T00:32:09/small-bench/FINE.data}
+PGFPlots: reading {../data/2025-01-13T00:32:09/small-bench/LOCK_FREE.data}
+PGFPlots: reading {../data/2025-01-13T00:32:09/small-bench/SEQUENTIAL.data}
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 31.
 LaTeX Font Info:    External font `cmex10' loaded for size
@@ -538,10 +538,10 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./avg_plot.aux) ) 
 Here is how much of TeX's memory you used:
- 22405 strings out of 483183
- 598619 string characters out of 5966292
- 953074 words of memory out of 5000000
- 37081 multiletter control sequences out of 15000+600000
+ 22408 strings out of 483183
+ 598681 string characters out of 5966292
+ 953073 words of memory out of 5000000
+ 37084 multiletter control sequences out of 15000+600000
  532338 words of font info for 24 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  70i,18n,105p,794b,2207s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -549,7 +549,7 @@ Here is how much of TeX's memory you used:
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/tex
 live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on avg_plot.pdf (1 page, 35821 bytes).
+Output written on avg_plot.pdf (1 page, 35830 bytes).
 PDF statistics:
  23 PDF objects out of 1000 (max. 8388607)
  16 compressed objects within 1 object stream

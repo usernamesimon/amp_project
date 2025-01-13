@@ -297,13 +297,14 @@ bool skiplist_add(void *skiplist, int key, void *data, implementation imp, unsig
         return fine_skiplist_add((fine_list*)skiplist, key, data, r_state);
         break;
 
+
     case LOCK_FREE:
         ;
         struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
         node->key = key;
         node->value = data;
         lock_free_skiplist_init_node(&node->snode);
-        int result = lock_free_skiplist_insert((skiplist_raw*)skiplist, node, r_state);
+        int result = lock_free_skiplist_insert((skiplist_raw*)skiplist, &node->snode, r_state);
         if (result < 0) {
             free(node);
             return false;
@@ -332,7 +333,7 @@ bool skiplist_contains(void *skiplist, int key, implementation imp)
         struct my_node* node = (struct my_node*)malloc(sizeof(struct my_node));
         node->key = key;
         lock_free_skiplist_init_node(&node->snode);
-        skiplist_raw* found = lock_free_skiplist_find((skiplist_raw*)skiplist, node);
+        skiplist_node* found = lock_free_skiplist_find((skiplist_raw*)skiplist, &node->snode);
         bool result = false;
         if (found != NULL) {
             result = true;
@@ -341,7 +342,6 @@ bool skiplist_contains(void *skiplist, int key, implementation imp)
         free(node);
         return result;
         break;
-
 
     default:
         return NULL;
@@ -533,27 +533,27 @@ struct bench_result *parallel_skiplist_benchmark(uint16_t num_threads, uint16_t 
             drand48_r((struct drand48_data *)thread_random, &die);
             if (die < operations_mix.insert_p)
             {
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+                clock_gettime(CLOCK_REALTIME, &start);
                 res = skiplist_add(skiplist, key, NULL, imp, thread_random);
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                clock_gettime(CLOCK_REALTIME, &end);
                 thread_time_ns += time_diff(&start, &end);
                 successfull_adds += res;
                 failed_adds += !res;
             }
             else if (die < operations_mix.insert_p + operations_mix.contain_p)
             {
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+                clock_gettime(CLOCK_REALTIME, &start);
                 res = skiplist_contains(skiplist, key, imp);
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                clock_gettime(CLOCK_REALTIME, &end);
                 thread_time_ns += time_diff(&start, &end);
                 successfull_contains += res;
                 failed_contains += !res;
             }
             else
             {
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+                clock_gettime(CLOCK_REALTIME, &start);
                 res = skiplist_remove(skiplist, key, imp);
-                clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+                clock_gettime(CLOCK_REALTIME, &end);
                 thread_time_ns += time_diff(&start, &end);
                 successfull_removes += res;
                 failed_removes += !res;

@@ -15,7 +15,7 @@ NAME = $(SOURCES:%.c=%)
 OBJECTS= $(SOURCES:%.c=%.o)
 D_OBJECTS = $(SOURCES:%.c=%_debug.o)
 
-all: $(OBJECTS)
+all: $(BUILD_DIR) benchmark.so
 
 $(DATA_DIR):
 	@echo "Creating data directory: $(DATA_DIR)"
@@ -37,7 +37,7 @@ benchmark.so: $(OBJECTS)
 	@echo "Linking $@"
 	$(CC) $(CFLAGS) -fPIC -shared -o $(BUILD_DIR)/$@ $(OBJECTS:%=$(BUILD_DIR)/%) 
 
-benchmark_debug: $(D_OBJECTS) benchmark_debug.o
+benchmark_debug: $(D_OBJECTS)
 	@echo "Linking $@"
 	$(CC) -g -fopenmp -Wall -Wextra -fPIC -o $(BUILD_DIR)/$@ $(D_OBJECTS:%=$(BUILD_DIR)/%) 
 
@@ -102,11 +102,12 @@ lock_free_skiplist_debug.o: $(SRC_DIR)/lock_free_skiplist.c
 # 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
 bench:
-	@echo "This could run a sophisticated benchmark"
+	@echo "Running big benchmark, this could take a few minutes..."
+	$(PYTHON) benchmark.py
 
 small-bench: $(BUILD_DIR) $(DATA_DIR) benchmark.so
 	@echo "Running small-bench ..."
-	$(PYTHON) benchmark.py
+	$(PYTHON) small_benchmark.py
 
 small-plot: 
 	@echo "Plotting small-bench results ..."
@@ -121,7 +122,7 @@ report: small-plot
 	@echo "Done"
 
 zip:
-	@zip project.zip benchmark.py Makefile README src/* plots/avg_plot.tex report/report.tex run_nebula.sh
+	@zip project.zip benchmark.py small_benchmark.py Makefile README src/* inc/* plots/avg_plot.tex report/report.tex run_nebula.sh
 
 clean:
 	@echo "Cleaning build directory: $(BUILD_DIR) and binaries: $(NAME) $(NAME).so"
