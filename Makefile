@@ -101,7 +101,7 @@ lock_free_skiplist_debug.o: $(SRC_DIR)/lock_free_skiplist.c
 # 	@echo "Linking $@"
 # 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ $(BUILD_DIR)/$^
 
-bench:
+bench: $(BUILD_DIR) $(DATA_DIR) benchmark.so
 	@echo "Running big benchmark, this could take a few minutes..."
 	$(PYTHON) benchmark.py
 
@@ -112,6 +112,13 @@ small-bench: $(BUILD_DIR) $(DATA_DIR) benchmark.so
 small-plot: 
 	@echo "Plotting small-bench results ..."
 	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{avg_plot.tex}"'
+	@echo "============================================"
+	@echo "Created plots/avgplot.pdf"
+
+plot: 
+	@echo "Plotting bench results ..."
+	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{parameters1_1s_throughput.tex}"'
+	bash -c 'cd plots && pdflatex "\newcommand{\DATAPATH}{../data/$$(ls ../data/ | sort -r | head -n 1)}\input{parameters1_1s_per_thread.tex}"'
 	@echo "============================================"
 	@echo "Created plots/avgplot.pdf"
 

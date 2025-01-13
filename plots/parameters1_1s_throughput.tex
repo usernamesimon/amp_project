@@ -5,10 +5,17 @@
 
 \begin{document}
   \begin{tikzpicture}
-    \begin{axis}[title={Total throughput},              % Title of the graph
+    \begin{loglogaxis}[title={Total throughput},              % Title of the graph
                  xtick={1,2,4,8,10,20,40,64},  % The ticks on the x-axis
                  xlabel={number of threads},        % Label of the x-axis
                  ylabel={total ops / [s]},             % Label of the y-axis
+                 xticklabel=\pgfmathparse{exp(\tick)}
+                 \pgfmathprintnumber{\pgfmathresult},
+                 scaled x ticks = false,
+                 xticklabel style = {
+                    /pgf/number format/fixed,
+                    /pgf/number format/precision = 0,
+                  },
                  legend style={
                    at={(1.05,0.95)},                % Position of the legend anchor
                    anchor=north west                % The legend anchor
@@ -16,18 +23,18 @@
 
       % Each graph is added via \addplot and a .data file, and
       % add a legend entry for the previous graph.
-      \addplot table [y=throughput]{\DATAPATH/small-bench/COARSE.data};
+      \addplot table [y=throughput]{\DATAPATH/parameters1_1s/COARSE.data};
       \addlegendentry{COARSE}
 
-      \addplot table [y=throughput]{\DATAPATH/small-bench/FINE.data};
+      \addplot table [y=throughput]{\DATAPATH/parameters1_1s/FINE.data};
       \addlegendentry{FINE}
 
-      \addplot table [y=throughput]{\DATAPATH/small-bench/LOCK_FREE.data};
+      \addplot table [y=throughput]{\DATAPATH/parameters1_1s/LOCK_FREE.data};
       \addlegendentry{LOCK-FREE}
 
-      \addplot table [y=throughput]{\DATAPATH/small-bench/SEQUENTIAL.data};
+      \addplot table [y=throughput]{\DATAPATH/parameters1_1s/SEQUENTIAL.data};
       \addlegendentry{SEQUENTIAL}
 
-    \end{axis}
+    \end{loglogaxis}
   \end{tikzpicture}
 \end{document}
